@@ -1,0 +1,29 @@
+{
+  "name": "wasm-render",
+  "version": "0.0.1",
+  "description": "Software rasteriser written in WASM/C & Javascript to test WebAssembly and compare performance",
+  "main": "main.js",
+  "scripts": {
+    "test": "npm run test",
+    "wasm-init": "wasm-init",
+    "compile": "wasm-compile"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alanmacleod/wasm-render.git"
+  },
+  "keywords": [
+    "wasm",
+    "js",
+    "c",
+    "rasterisation",
+    "renderer",
+    "3d"
+  ],
+  "author": "Alan MacLeod",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alanmacleod/wasm-render/issues"
+  },
+  "homepage": "https://github.com/alanmacleod/wasm-render#readme"
+}
