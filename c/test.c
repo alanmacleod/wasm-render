@@ -33,9 +33,9 @@ void addOne(unsigned char val, unsigned char *heap, int len) {
   {
     //val = heap[t];
     //fprintf(stdout, "t = %i !!\n", val);
-    heap[t+0] = val;
+    heap[t+0] = 0;
     heap[t+1] = val;
-    heap[t+2] = val;
+    heap[t+2] = 0;
     heap[t+3] = 255;
   }
 

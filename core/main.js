@@ -1,6 +1,7 @@
 
 import WasmLoader from './WasmLoader';
 
+const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 
@@ -13,6 +14,7 @@ w.load("./wasm/test").then((wasm) => {
   let ctx = c.getContext('2d');
   ctx.fillStyle = "#0000ff";
   ctx.fillRect(0,0,SCR_WIDTH, SCR_HEIGHT);
+
   // Get a reference to the image data bytes `canvasData.data`
   let canvasData = ctx.getImageData(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
