@@ -20,6 +20,8 @@ stats.dom.style.left = "";
 
 w.load("./wasm/test").then((wasm) => {
 
+  // test
+  
   // Setup Canvas and initialise to fill blue
   let c = createCanvas(SCR_WIDTH, SCR_HEIGHT);
   let ctx = c.getContext('2d');
@@ -30,6 +32,8 @@ w.load("./wasm/test").then((wasm) => {
   let canvasData = ctx.getImageData(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
   // Allocate a buffer on the heap for our WASM code to write into
+  // Note that the boilerplate in wasm/test.js sets a limit of 16 MB
+  // although theoretically the maximum is 4 GB
   let HEAP_buffer_ptr8 = wasm._malloc(PAGE_SIZE_BYTES);
 
   // Now create a reverse-reference to the WASM heap as a JS TypedArray
@@ -37,22 +41,14 @@ w.load("./wasm/test").then((wasm) => {
   let view = new Uint8ClampedArray(wasm.buffer, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
 
 
-  // let time = performance.now();
-  //
-  // for (let t=0; t<60; t++)
-  // {
-  //
-  // }
-  //
-  // console.log("60 fps time = ", performance.now() - time);
   requestAnimationFrame(render);
-  //render();
 
 
   function render()
   {
     stats.begin();
 
+    // Simulate a rocky frame-rate
     let numFrames = 30 + Math.random() * 60;
 
     for (let t=0; t<numFrames; t++)
