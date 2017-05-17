@@ -2,7 +2,7 @@
 module.exports = {
   emscripten_path: './../emsdk',
   inputfile: './c/test.c',
-  outputfile: './wasm/lib.js',
+  outputfile: './pub/wasm/test.js',
   exported_functions: [
     '_addOne',
   ],
