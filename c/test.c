@@ -26,13 +26,15 @@ void addOne(unsigned char val, unsigned char *heap, int len) {
   // NOTE: I did not see this mentioned anywhere, but it seems
   //       by default stdout is not defined for `printf()` so this does nothing!
   //    printf("Hello from WASM in *C* !!");
-
   // However specifying stdout manually works via `fprintf()`
+  //fprintf(stdout, "t = %i !!\n", val);
+
+
   int t = 0;//, val = 0;
   for (t=0; t<len; t+=4)
   {
     //val = heap[t];
-    //fprintf(stdout, "t = %i !!\n", val);
+
     heap[t+0] = 0;
     heap[t+1] = val;
     heap[t+2] = 0;
