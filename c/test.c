@@ -5,7 +5,7 @@
 // #include <emscripten/emscripten.h>
 
 // NOTE: Some guides insisted I need this declaration:
-//       EMSCRIPTEN_KEEPALIVE for all my exported functions but that
+//       EMSCRIPTEN_KEEPALIVE; for all my exported functions but that
 //       doesn't seem to be the case upon testing
 //      #include <emscripten/emscripten.h>
 
@@ -14,7 +14,7 @@
 #endif
 
 
-void addOne(int *heap) {
+void addOne(unsigned char val, unsigned char *heap, int len) {
   //std::cout << "Hello Alan, from WASM!" << std::endl;
   // EM_ASM(
   //   // Shows a Javascript window.alert() ... literally wtf !
@@ -28,11 +28,15 @@ void addOne(int *heap) {
   //    printf("Hello from WASM in *C* !!");
 
   // However specifying stdout manually works via `fprintf()`
-  int t = 0, val = 0;
-  for (t=0; t<5; t++)
+  int t = 0;//, val = 0;
+  for (t=0; t<len; t+=4)
   {
-    val = heap[t];
-    fprintf(stdout, "t = %i !!\n", val);
+    //val = heap[t];
+    //fprintf(stdout, "t = %i !!\n", val);
+    heap[t+0] = val;
+    heap[t+1] = val;
+    heap[t+2] = val;
+    heap[t+3] = 255;
   }
 
   return;
