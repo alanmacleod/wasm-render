@@ -14,12 +14,8 @@
 #endif
 
 
-int addOne(int val) {
+void addOne(int *heap) {
   //std::cout << "Hello Alan, from WASM!" << std::endl;
-
-  int src = 1;
-  int dst;
-
   // EM_ASM(
   //   // Shows a Javascript window.alert() ... literally wtf !
   //   //NOTE: this is blocking, as per usual js behaviour, execution halts
@@ -32,9 +28,14 @@ int addOne(int val) {
   //    printf("Hello from WASM in *C* !!");
 
   // However specifying stdout manually works via `fprintf()`
-  fprintf(stdout, "Hello hello hello, from WASM in *C*, it works etc !!\n");
+  int t = 0, val = 0;
+  for (t=0; t<5; t++)
+  {
+    val = heap[t];
+    fprintf(stdout, "t = %i !!\n", val);
+  }
 
-  return val + 1;
+  return;
 }
 
 
