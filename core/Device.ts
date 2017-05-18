@@ -22,7 +22,7 @@ export default class Device
     let bytes:number = width * height * PIXEL_SIZE_BYTES;
   }
 
-  insert(element?:string)
+  create(element?:string)
   {
     let e:HTMLElement = !(element) ? document.body :
                                      document.getElementById(element);

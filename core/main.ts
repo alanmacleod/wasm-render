@@ -16,7 +16,7 @@ w.load("./wasm/test").then((wasm: WasmInstance) =>
 {
   let device = new Device(SCR_WIDTH, SCR_HEIGHT);
 
-  device.insert();
+  device.create();
   device.clear('#ff00ff');
 
   // Allocate a buffer on the heap for our WASM code to write into
