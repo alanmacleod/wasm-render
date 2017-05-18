@@ -7,7 +7,7 @@ export interface WasmInstance
 {
   _malloc(size: number): number;
   buffer:   any;
-  _addOne:  any;
+  _addOne:  void;
 }
 
 
