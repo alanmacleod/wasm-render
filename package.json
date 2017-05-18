@@ -7,7 +7,8 @@
     "test": "npm run test",
     "wasm-init": "wasm-init",
     "compile": "wasm-compile",
-    "build": "webpack -c"
+    "build": "webpack"
+
   },
   "repository": {
     "type": "git",
@@ -18,8 +19,11 @@
     "js",
     "c",
     "rasterisation",
+    "rasterization",
     "renderer",
-    "3d"
+    "3d",
+    "webassembly",
+    "javascript"
   ],
   "author": "Alan MacLeod",
   "license": "MIT",
@@ -32,13 +36,16 @@
   },
   "devDependencies": {
     "ava": "^0.19.1",
+    "awesome-typescript-loader": "^3.1.3",
     "babel-core": "^6.18.2",
     "babel-loader": "^6.2.7",
     "babel-preset-es2015": "^6.18.0",
     "babili-webpack-plugin": "^0.0.11",
     "should": "^11.2.1",
+    "source-map-loader": "^0.2.1",
+    "typescript": "^2.3.2",
     "wasm-init": "0.0.38",
     "wasm-loader": "^1.0.0",
-    "webpack": "^1.13.3"
+    "webpack": "^2.5.1"
   }
 }

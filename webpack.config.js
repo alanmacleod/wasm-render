@@ -7,39 +7,57 @@ const BabiliPlugin = require("babili-webpack-plugin");
 // But webpack needs those deps to build! Sure there's a nicer way but #fornow:
 const PRODUCTION_STR = "buildproduction";
 
-if (process.env.NODE_ENV == PRODUCTION_STR)
-  console.log("*** Building for PRODUCTION ****");
-else
-  console.log("*** Building for development ****");
+const ENV_STR = (process.env.NODE_ENV == PRODUCTION_STR) ?
+  "\x1b[97m\x1b[41m PRODUCTION \x1b[0m" : "\x1b[97m\x1b[44m DEVELOPMENT \x1b[0m";
+
+console.log(`\n\x1b[97m 💅  Building\x1b[0m [${ENV_STR}]\n`);
 
 module.exports = [
     {
         context: path.join(__dirname, "core"),
-        entry: './main.js',
-        devtool: "inline-sourcemap",
+        entry: './main.ts',
+        // devtool: "inline-sourcemap",
+        devtool: "source-map",
         output: {
           path: path.join(__dirname, "pub"),
           publicPath: "/",
           filename: "main.build.js"
         },
         module: {
-            loaders: [
-                {
-                    test: /\.js$/,
-                    exclude: /(node_modules)/,
-                    loader: 'babel-loader',
-                    query: {
-                        presets: ['es2015']
+          rules: [ //see: https://webpack.js.org/guides/migrating/
+              {
+                  test: /\.tsx?$/,
+                  loader: 'ts-loader'
+              },
+              {
+                  test: /\.js$/,
+                  exclude: /(node_modules)/,
+                  use: [
+                    {
+                      loader: 'babel-loader',
+                      // options: { presets: ['es2015'] } // <-- produces deprecation warning... necessary?
                     }
-                },
-                {
-                  test: /\.wasm$/,
-                  loader: 'wasm-loader'
-                }
-            ]
+                ]
+              },
+              {
+                enforce: "pre",
+                test: /\.js$/,
+                loader: "source-map-loader"
+              }
+          ]
+            // loaders: [
+            //     {
+            //         test: /\.js$/,
+            //         exclude: /(node_modules)/,
+            //         loader: 'babel-loader',
+            //         query: {
+            //             presets: ['es2015']
+            //         }
+            //     }
+            // ]
         },
         resolve: {
-            extensions: ['', '.js', '.json']
+            extensions: ['.ts','.js', '.json']
         },
         plugins: process.env.NODE_ENV != PRODUCTION_STR ? [] :
         [
