@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "target": "es6",
+    
+    "noFallthroughCasesInSwitch": false,
+    "noImplicitReturns": true
+  },
+  "include": [
+    "./core/**/*"
+  ]
+}
