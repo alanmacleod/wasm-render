@@ -1,6 +1,8 @@
 
-export interface IRasteriser
+interface IRasteriser
 {
   jobs: number;
   render(): void;
 }
+
+export default IRasteriser;

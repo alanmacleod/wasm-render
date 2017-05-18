@@ -7,8 +7,8 @@
     "test": "npm run test",
     "wasm-init": "wasm-init",
     "compile": "wasm-compile",
-    "build": "webpack"
-
+    "build": "webpack",
+    "watch": "webpack -w"
   },
   "repository": {
     "type": "git",

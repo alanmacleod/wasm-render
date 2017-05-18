@@ -1,5 +1,5 @@
 
-import {IRasteriser} from './IRasteriser';
+import IRasteriser from './IRasteriser';
 
 export default class NativeRasteriser implements IRasteriser
 {

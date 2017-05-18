@@ -63,11 +63,121 @@
 /******/ 	__webpack_require__.p = "/";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 2);
+/******/ 	return __webpack_require__(__webpack_require__.s = 4);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+// Device.ts
+// Just abstracts the canvas crap
+// Accepts a Uint8 buffer for rendering
+// 32-bit colour RGBA
+const PIXEL_SIZE_BYTES = 4;
+class Device {
+    constructor(width, height) {
+        this.width = width;
+        this.height = height;
+        let bytes = width * height * PIXEL_SIZE_BYTES;
+    }
+    insert(element) {
+        let e = !(element) ? document.body :
+            document.getElementById(element);
+        let c = document.createElement('canvas');
+        c.width = this.width;
+        c.height = this.height;
+        this.canvas = c;
+        this.context = this.canvas.getContext('2d');
+        // the actual pixel data
+        this.imageData = this.context.getImageData(0, 0, this.width, this.height);
+        e.appendChild(c);
+    }
+    clear(colour = "0xffffff") {
+        this.context.fillStyle = colour;
+        this.context.fillRect(0, 0, this.width, this.height);
+    }
+    // Old school points for anyone who cracks a smile at the 'flip' verb
+    flip(buffer) {
+        if (!buffer)
+            throw new ReferenceError("`buffer: Uint8ClampedArray` is required!");
+        this.imageData.data.set(buffer);
+        this.context.putImageData(this.imageData, 0, 0);
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Device;
+
+
+
+/***/ }),
+/* 1 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__);
+
+class StatsGraph {
+    constructor() {
+        this.stats = __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__();
+        document.body.appendChild(this.stats.dom);
+        this.stats.showPanel(1);
+        this.stats.dom.style.position = "absolute";
+        this.stats.dom.style.top = "5px";
+        this.stats.dom.style.right = "5px";
+        this.stats.dom.style.left = "";
+    }
+    begin() {
+        this.stats.begin();
+    }
+    end() {
+        this.stats.end();
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = StatsGraph;
+
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+window.Module = {};
+class WasmLoader {
+    constructor() {
+    }
+    load(wasm) {
+        let _wasm = wasm + ".wasm";
+        let _imports = wasm + ".js";
+        return new Promise((resolve, reject) => {
+            // WASM not supported, end
+            if (!('WebAssembly' in window)) {
+                console.log('Could not load WASM');
+                return reject(window.Module);
+            }
+            fetch(_wasm).then(response => {
+                return response.arrayBuffer();
+            })
+                .then(buffer => {
+                window.Module.wasmBinary = buffer;
+                window.script = document.createElement('script');
+                window.doneEvent = new Event('done');
+                window.script.addEventListener('done', () => {
+                    resolve(window.Module);
+                });
+                window.script.src = './wasm/test.js';
+                document.body.appendChild(window.script);
+            });
+        });
+    }
+}
+/* harmony default export */ __webpack_exports__["a"] = (WasmLoader);
+
+
+/***/ }),
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // stats.js - http://github.com/mrdoob/stats.js
@@ -117,74 +227,26 @@
 });
 
 /***/ }),
-/* 1 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-window.Module = {};
-class WasmLoader {
-    constructor() {
-    }
-    load(wasm) {
-        let _wasm = wasm + ".wasm";
-        let _imports = wasm + ".js";
-        return new Promise((resolve, reject) => {
-            // WASM not supported, end
-            if (!('WebAssembly' in window)) {
-                console.log('Could not load WASM');
-                return reject(window.Module);
-            }
-            fetch(_wasm).then(response => {
-                return response.arrayBuffer();
-            })
-                .then(buffer => {
-                window.Module.wasmBinary = buffer;
-                window.script = document.createElement('script');
-                window.doneEvent = new Event('done');
-                window.script.addEventListener('done', () => {
-                    resolve(window.Module);
-                });
-                window.script.src = './wasm/test.js';
-                document.body.appendChild(window.script);
-            });
-        });
-    }
-}
-/* harmony default export */ __webpack_exports__["a"] = (WasmLoader);
-
-
-/***/ }),
-/* 2 */
+/* 4 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__lib_stats_min__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__WasmLoader__ = __webpack_require__(1);
-// JS imports
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__WasmLoader__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__StatsGraph__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Device__ = __webpack_require__(0);
 
-// TS imports
+
 
 const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
-let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
-let stats = __WEBPACK_IMPORTED_MODULE_0__lib_stats_min__();
-stats.showPanel(1);
-document.body.appendChild(stats.dom);
-stats.dom.style.position = "absolute";
-stats.dom.style.top = "5px";
-stats.dom.style.right = "5px";
-stats.dom.style.left = "";
+let w = new __WEBPACK_IMPORTED_MODULE_0__WasmLoader__["a" /* default */]();
+let s = new __WEBPACK_IMPORTED_MODULE_1__StatsGraph__["a" /* default */]();
 w.load("./wasm/test").then((wasm) => {
-    // Setup Canvas and initialise to fill blue
-    let c = createCanvas(SCR_WIDTH, SCR_HEIGHT);
-    let ctx = c.getContext('2d');
-    ctx.fillStyle = "#0000ff";
-    ctx.fillRect(0, 0, SCR_WIDTH, SCR_HEIGHT);
-    // Get a reference to the image data bytes `canvasData.data`
-    let canvasData = ctx.getImageData(0, 0, SCR_WIDTH, SCR_HEIGHT);
+    let device = new __WEBPACK_IMPORTED_MODULE_2__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT);
+    device.insert();
+    device.clear('#ff00ff');
     // Allocate a buffer on the heap for our WASM code to write into
     // Note that the boilerplate in wasm/test.js sets a limit of 16 MB
     // although theoretically the maximum is 4 GB
@@ -194,27 +256,13 @@ w.load("./wasm/test").then((wasm) => {
     let view = new Uint8ClampedArray(wasm.buffer, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
     requestAnimationFrame(render);
     function render() {
-        stats.begin();
-        // Simulate a rocky frame-rate
-        let numFrames = 30 + Math.random() * 60;
-        for (let t = 0; t < numFrames; t++) {
-            // Call the WASM/C code! Telling it where the heap data is
-            wasm._addOne(128, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
-            // Write it's output into our Canvas buffer
-            canvasData.data.set(view);
-            // Display on screen!
-            ctx.putImageData(canvasData, 0, 0);
-        }
-        stats.end();
+        s.begin();
+        wasm._addOne(128, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
+        device.flip(view);
+        s.end();
         requestAnimationFrame(render);
     }
 });
-function createCanvas(w, h) {
-    let c = document.createElement('canvas');
-    c.width = w, c.height = h;
-    document.body.appendChild(c);
-    return c;
-}
 
 
 /***/ })

@@ -1,5 +1,7 @@
 
 
+// Define interfaces for external js objects
+
 // Global mess made by Emscripten's boilerplate
 export interface WasmInstance
 {
@@ -15,5 +17,5 @@ export interface ThreeStats
   showPanel(which: number): void;
   begin():  void;
   end():    void;
-  dom:      any;
+  dom:      HTMLElement;
 }
