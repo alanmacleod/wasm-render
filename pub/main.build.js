@@ -446,7 +446,7 @@ const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 let w = new __WEBPACK_IMPORTED_MODULE_0__WasmLoader__["a" /* default */]();
 let s = new __WEBPACK_IMPORTED_MODULE_1__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_1__StatsGraph__["b" /* StatsMode */].MS);
-w.load("./wasm/test").then((wasm) => {
+w.load("./wasm/WasmRasteriser").then((wasm) => {
     // Create a rasteriser
     let nraster = new __WEBPACK_IMPORTED_MODULE_2__rasteriser_NativeRasteriser__["a" /* default */]();
     let wraster = new __WEBPACK_IMPORTED_MODULE_3__rasteriser_WasmRasteriser__["a" /* default */](wasm);

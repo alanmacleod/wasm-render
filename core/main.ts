@@ -13,7 +13,7 @@ const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 let w = new WasmLoader();
 let s = new StatsGraph(StatsMode.MS);
 
-w.load("./wasm/test").then((wasm: WasmInstance) =>
+w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 {
   // Create a rasteriser
   let nraster = new NativeRasteriser();

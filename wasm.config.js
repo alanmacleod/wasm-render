@@ -1,8 +1,8 @@
 // wasm.config.js
 module.exports = {
   emscripten_path: './../emsdk',
-  inputfile: './c/test.c',
-  outputfile: './pub/wasm/test.js',
+  inputfile: './c/WasmRasteriser.c',
+  outputfile: './pub/wasm/WasmRasteriser.js',
   exported_functions: [
     '_init', '_fill', '_pset', '_vline'
   ],
