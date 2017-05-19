@@ -1,6 +1,11 @@
 
+// WasmRasteriser.c
+//        Alan MacLeod 2017
+
 #include <stdio.h>
 #include <stdbool.h>
+#include "vec3.h"
+#include "WasmRasteriser.h"
 
 #define BYTES_PER_PIXEL 4
 
@@ -23,6 +28,21 @@ unsigned int buffer_width       = 0;
 unsigned int buffer_height      = 0;
 unsigned int buffer_num_pixels  = 0;
 unsigned int buffer_num_bytes   = 0;
+
+void testExtern()
+{
+  vec3 v0, v1;
+  
+  v0.x = 1;
+  v0.y = 2;
+  v0.z = 3;
+
+  v1.x = 2;
+  v1.y = 3;
+  v1.z = 4;
+
+  vec3_sum(v0, v1);
+}
 
 void init(unsigned int *buffer, unsigned int width, unsigned int height)
 {
@@ -80,50 +100,3 @@ void vline(int x, int y1, int y2, unsigned int val)
     heap_ptr[o] = val;
   }
 }
-
-
-/*
-void addOne(unsigned char val, unsigned char *heap, int len)
-{
-  // printf("buffer_num_pixels: %i\n", buffer_num_pixels);
-  // // printf("addOne() called");
-  // return;
-
-  // fprintf(stdout, "Hello");
-  // return;
-  //
-  // int internal_val = 0;
-  //
-  // //std::cout << "Hello Alan, from WASM!" << std::endl;
-  // // EM_ASM(
-  // //   // Shows a Javascript window.alert() ... literally wtf !
-  // //   //NOTE: this is blocking, as per usual js behaviour, execution halts
-  // //   //      here until dialog closed
-  // //   alert('wtf');
-  // // );
-  //
-  // // NOTE: I did not see this mentioned anywhere, but it seems
-  // //       by default stdout is not defined for `printf()` so this does nothing!
-  // //    printf("Hello from WASM in *C* !!");
-  // // However specifying stdout manually works via `fprintf()`
-  // //fprintf(stdout, "t = %i !!\n", val);
-  //
-  // fprintf(stdout, "internal_val = %i", internal_val);
-  //
-  // internal_val = (int)val;
-  //
-  // // int t = 0;//, val = 0;
-  int t = 0;
-  for (t=0; t<len; t+=4)
-  {
-    //val = heap[t];
-
-    heap[t+0] = val;
-    heap[t+1] = val;
-    heap[t+2] = 0;
-    heap[t+3] = 255;
-  }
-  //
-  // return;
-}
-*/
