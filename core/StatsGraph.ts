@@ -6,11 +6,11 @@ export default class StatsGraph
 {
   private stats:ThreeStats;
 
-  constructor()
+  constructor(mode:number = 1)
   {
     this.stats = Stats();
     document.body.appendChild( this.stats.dom );
-    this.stats.showPanel( 1 );
+    this.stats.showPanel( mode );
     this.stats.dom.style.position = "absolute";
     this.stats.dom.style.top = "5px";
     this.stats.dom.style.right = "5px";
@@ -27,4 +27,12 @@ export default class StatsGraph
     this.stats.end();
   }
 
+}
+
+export enum StatsMode
+{
+  FPS = 0,
+  MS = 1,
+  MB = 2,
+  CUSTOM = 3
 }

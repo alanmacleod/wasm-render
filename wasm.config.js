@@ -4,7 +4,7 @@ module.exports = {
   inputfile: './c/test.c',
   outputfile: './pub/wasm/test.js',
   exported_functions: [
-    '_addOne',
+    '_init', '_fill', '_pset', '_vline'
   ],
   flags: [
     '-s WASM=1',

@@ -3,9 +3,11 @@
 // Just abstracts the canvas crap
 // Accepts a Uint8 buffer for rendering
 
-// 32-bit colour RGBA
-const PIXEL_SIZE_BYTES:number = 4;
+import IRasteriser       from './rasteriser/IRasteriser';
+import {BYTES_PER_PIXEL} from './sym';
 
+
+// rename VideoDevice() as will extend to include texture "memory" etc
 export default class Device
 {
   private context: CanvasRenderingContext2D;
@@ -13,48 +15,62 @@ export default class Device
   private width: number;
   private height: number;
   private imageData: ImageData;
+  private rasteriser: IRasteriser;
+  private bytes: number;
 
-  constructor(width: number, height: number)
+  constructor(width: number, height: number, rasteriser: IRasteriser)
   {
     this.width = width;
     this.height = height;
+    this.rasteriser = rasteriser;
 
-    let bytes:number = width * height * PIXEL_SIZE_BYTES;
+    this.rasteriser.init(width, height);
+    this.bytes = width * height * BYTES_PER_PIXEL;
   }
 
-  create(element?:string)
+  public create(element?:string)
   {
     let e:HTMLElement = !(element) ? document.body :
-                                     document.getElementById(element);
+                                     document.getElementById( element );
 
-    let c:HTMLCanvasElement = document.createElement('canvas');
+    let c:HTMLCanvasElement = document.createElement( 'canvas' );
 
     c.width = this.width;
     c.height = this.height;
 
     this.canvas = c;
-    this.context = this.canvas.getContext('2d');
+    this.context = this.canvas.getContext( '2d' );
+
+    this.clear();
 
     // the actual pixel data
-    this.imageData = this.context.getImageData(0, 0, this.width, this.height);
+    this.imageData = this.context.getImageData( 0, 0, this.width, this.height );
 
-    e.appendChild(c);
+    e.appendChild( c );
   }
 
-  clear(colour:string = "0xffffff")
+  public use(rasteriser:IRasteriser)
+  {
+    if (!rasteriser.ready)
+      rasteriser.init( this.width, this.height );
+
+    this.rasteriser = rasteriser;
+  }
+
+  public clear(colour:string = "0xffffff")
   {
     this.context.fillStyle = colour;
     this.context.fillRect( 0, 0, this.width, this.height );
   }
 
-  // Old school points for anyone who cracks a smile at the 'flip' verb
-  flip(buffer: Uint8ClampedArray)
+  // Old school points for anyone who smiles at 'flip'
+  public flip()
   {
-    if (!buffer)
-      throw new ReferenceError("`buffer: Uint8ClampedArray` is required!");
+    if (!this.rasteriser.buffer)
+      throw new ReferenceError("`rasteriser.buffer: Uint8ClampedArray` is required!");
 
-    this.imageData.data.set(buffer);
-    this.context.putImageData(this.imageData, 0, 0);
+    this.imageData.data.set( this.rasteriser.buffer );
+    this.context.putImageData( this.imageData, 0, 0 );
   }
 
 

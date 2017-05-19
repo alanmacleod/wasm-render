@@ -11,8 +11,8 @@ class WasmLoader
 
   load(wasm: string)
   {
-    let _wasm:string = wasm + ".wasm";
-    let _imports:string = wasm + ".js";
+    let _wasm = wasm + ".wasm";
+    let _imports = wasm + ".js";
 
     return new Promise((resolve, reject) => {
 

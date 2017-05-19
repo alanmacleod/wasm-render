@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "/";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 4);
+/******/ 	return __webpack_require__(__webpack_require__.s = 7);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -71,42 +71,11 @@
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-// Device.ts
-// Just abstracts the canvas crap
-// Accepts a Uint8 buffer for rendering
-// 32-bit colour RGBA
-const PIXEL_SIZE_BYTES = 4;
-class Device {
-    constructor(width, height) {
-        this.width = width;
-        this.height = height;
-        let bytes = width * height * PIXEL_SIZE_BYTES;
-    }
-    insert(element) {
-        let e = !(element) ? document.body :
-            document.getElementById(element);
-        let c = document.createElement('canvas');
-        c.width = this.width;
-        c.height = this.height;
-        this.canvas = c;
-        this.context = this.canvas.getContext('2d');
-        // the actual pixel data
-        this.imageData = this.context.getImageData(0, 0, this.width, this.height);
-        e.appendChild(c);
-    }
-    clear(colour = "0xffffff") {
-        this.context.fillStyle = colour;
-        this.context.fillRect(0, 0, this.width, this.height);
-    }
-    // Old school points for anyone who cracks a smile at the 'flip' verb
-    flip(buffer) {
-        if (!buffer)
-            throw new ReferenceError("`buffer: Uint8ClampedArray` is required!");
-        this.imageData.data.set(buffer);
-        this.context.putImageData(this.imageData, 0, 0);
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Device;
+const BYTES_PER_PIXEL = 4;
+/* harmony export (immutable) */ __webpack_exports__["a"] = BYTES_PER_PIXEL;
+
+const ALPHA_MAGIC_NUMBER = 4278190080;
+/* harmony export (immutable) */ __webpack_exports__["b"] = ALPHA_MAGIC_NUMBER;
 
 
 
@@ -115,14 +84,68 @@ class Device {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__sym__ = __webpack_require__(0);
+// Device.ts
+// Just abstracts the canvas crap
+// Accepts a Uint8 buffer for rendering
+
+// rename VideoDevice() as will extend to include texture "memory" etc
+class Device {
+    constructor(width, height, rasteriser) {
+        this.width = width;
+        this.height = height;
+        this.rasteriser = rasteriser;
+        this.rasteriser.init(width, height);
+        this.bytes = width * height * __WEBPACK_IMPORTED_MODULE_0__sym__["a" /* BYTES_PER_PIXEL */];
+    }
+    create(element) {
+        let e = !(element) ? document.body :
+            document.getElementById(element);
+        let c = document.createElement('canvas');
+        c.width = this.width;
+        c.height = this.height;
+        this.canvas = c;
+        this.context = this.canvas.getContext('2d');
+        this.clear();
+        // the actual pixel data
+        this.imageData = this.context.getImageData(0, 0, this.width, this.height);
+        e.appendChild(c);
+    }
+    use(rasteriser) {
+        if (!rasteriser.ready)
+            rasteriser.init(this.width, this.height);
+        this.rasteriser = rasteriser;
+    }
+    clear(colour = "0xffffff") {
+        this.context.fillStyle = colour;
+        this.context.fillRect(0, 0, this.width, this.height);
+    }
+    // Old school points for anyone who smiles at 'flip'
+    flip() {
+        if (!this.rasteriser.buffer)
+            throw new ReferenceError("`rasteriser.buffer: Uint8ClampedArray` is required!");
+        this.imageData.data.set(this.rasteriser.buffer);
+        this.context.putImageData(this.imageData, 0, 0);
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Device;
+
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return StatsMode; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__ = __webpack_require__(6);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__);
 
 class StatsGraph {
-    constructor() {
+    constructor(mode = 1) {
         this.stats = __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__();
         document.body.appendChild(this.stats.dom);
-        this.stats.showPanel(1);
+        this.stats.showPanel(mode);
         this.stats.dom.style.position = "absolute";
         this.stats.dom.style.top = "5px";
         this.stats.dom.style.right = "5px";
@@ -137,10 +160,17 @@ class StatsGraph {
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = StatsGraph;
 
+var StatsMode;
+(function (StatsMode) {
+    StatsMode[StatsMode["FPS"] = 0] = "FPS";
+    StatsMode[StatsMode["MS"] = 1] = "MS";
+    StatsMode[StatsMode["MB"] = 2] = "MB";
+    StatsMode[StatsMode["CUSTOM"] = 3] = "CUSTOM";
+})(StatsMode || (StatsMode = {}));
 
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -177,7 +207,176 @@ class WasmLoader {
 
 
 /***/ }),
-/* 3 */
+/* 4 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__sym__ = __webpack_require__(0);
+
+class NativeRasteriser {
+    triangle() { }
+    ;
+    constructor() {
+        this.ready = false;
+        this.triangle = () => {
+            console.log("Hell I'm a triangle");
+        };
+    }
+    init(w, h) {
+        this.width = w;
+        this.height = h;
+        this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_0__sym__["a" /* BYTES_PER_PIXEL */];
+        this.buffer = new Uint8ClampedArray(this.pagesize);
+        this.ready = true;
+    }
+    line(x0, y0, x1, y1, r, g, b) {
+        // Clipping?
+        let steep = false;
+        if (Math.abs(x0 - x1) < Math.abs(y0 - y1)) {
+            [x0, y0] = [y0, x0];
+            [x1, y1] = [y1, x1];
+            steep = true;
+        }
+        if (x0 > x1) {
+            [x0, x1] = [x1, x0];
+            [y0, y1] = [y1, y0];
+        }
+        let dx = x1 - x0;
+        let dy = y1 - y0;
+        let derror2 = Math.abs(dy) * 2;
+        let error2 = 0;
+        let y = y0;
+        for (let x = x0; x <= x1; x++) {
+            if (steep) {
+                this.pset(y, x, r, g, b);
+            }
+            else {
+                this.pset(x, y, r, g, b);
+            }
+            error2 += derror2;
+            if (error2 > dx) {
+                y += (y1 > y0 ? 1 : -1);
+                error2 -= dx * 2;
+            }
+        }
+    }
+    // void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
+    //     bool steep = false;
+    //     if (std::abs(x0-x1)<std::abs(y0-y1)) {
+    //         std::swap(x0, y0);
+    //         std::swap(x1, y1);
+    //         steep = true;
+    //     }
+    //     if (x0>x1) {
+    //         std::swap(x0, x1);
+    //         std::swap(y0, y1);
+    //     }
+    //     int dx = x1-x0;
+    //     int dy = y1-y0;
+    //     int derror2 = std::abs(dy)*2;
+    //     int error2 = 0;
+    //     int y = y0;
+    //     for (int x=x0; x<=x1; x++) {
+    //         if (steep) {
+    //             image.set(y, x, color);
+    //         } else {
+    //             image.set(x, y, color);
+    //         }
+    //         error2 += derror2;
+    //         if (error2 > dx) {
+    //             y += (y1>y0?1:-1);
+    //             error2 -= dx*2;
+    //         }
+    //     }
+    // }
+    xline(xd, yd, x1, y1, x2, y2, r, g, b) {
+        let ychange = yd / xd;
+        let y = y1;
+        for (let x = x1; x <= x2; x++) {
+            this.pset(x, Math.round(y), r, g, b);
+            y += ychange;
+        }
+    }
+    pset(x, y, r, g, b) {
+        let o = y * this.width * __WEBPACK_IMPORTED_MODULE_0__sym__["a" /* BYTES_PER_PIXEL */] + x * __WEBPACK_IMPORTED_MODULE_0__sym__["a" /* BYTES_PER_PIXEL */];
+        this.buffer[o + 0] = r;
+        this.buffer[o + 1] = g;
+        this.buffer[o + 2] = b;
+        this.buffer[o + 3] = 255;
+    }
+    vline(x, y1, y2, r, g, b) {
+        let hwidth = this.width * __WEBPACK_IMPORTED_MODULE_0__sym__["a" /* BYTES_PER_PIXEL */];
+        let xo = x * __WEBPACK_IMPORTED_MODULE_0__sym__["a" /* BYTES_PER_PIXEL */];
+        for (let y = y1; y <= y2; y++) {
+            let o = y * hwidth + xo;
+            this.buffer[o + 0] = r;
+            this.buffer[o + 1] = g;
+            this.buffer[o + 2] = b;
+            this.buffer[o + 3] = 255;
+        }
+    }
+    fill(r, g, b) {
+        for (let o = 0; o < this.pagesize; o += 4) {
+            this.buffer[o + 0] = r;
+            this.buffer[o + 1] = g;
+            this.buffer[o + 2] = b;
+            this.buffer[o + 3] = 255;
+        }
+    }
+    render() {
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = NativeRasteriser;
+
+
+
+/***/ }),
+/* 5 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__sym__ = __webpack_require__(0);
+
+class WasmRasteriser {
+    constructor(wasm) {
+        this.wasm = wasm;
+        this.ready = false;
+    }
+    init(w, h) {
+        this.width = w;
+        this.height = h;
+        this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_0__sym__["a" /* BYTES_PER_PIXEL */];
+        // Allocate buffer on the WASM heap
+        this.heapbuffer = this.wasm._malloc(this.pagesize);
+        // Tell the WASM exports where to find the heap data and also pass dims
+        this.wasm._init(this.heapbuffer, w, h);
+        // Now create a "reverse reference" to the heap using a JS TypedArray
+        this.buffer = new Uint8ClampedArray(this.wasm.buffer, this.heapbuffer, this.pagesize);
+        this.ready = true;
+    }
+    rgbpack(r, g, b) {
+        // little-endian bytepack: aaaaaaaa bbbbbbbb gggggggg rrrrrrrr
+        return __WEBPACK_IMPORTED_MODULE_0__sym__["b" /* ALPHA_MAGIC_NUMBER */] + (b << 16) + (g << 8) + r;
+    }
+    pset(x, y, r, g, b) {
+        this.wasm._pset(x, y, this.rgbpack(r, g, b));
+    }
+    vline(x, y1, y2, r, g, b) {
+        this.wasm._vline(x, y1, y2, this.rgbpack(r, g, b));
+    }
+    fill(r, g, b) {
+        //TODO: use memset!
+        this.wasm._fill(this.rgbpack(r, g, b));
+    }
+    render() {
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = WasmRasteriser;
+
+
+
+/***/ }),
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // stats.js - http://github.com/mrdoob/stats.js
@@ -227,14 +426,18 @@ class WasmLoader {
 });
 
 /***/ }),
-/* 4 */
+/* 7 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__WasmLoader__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__StatsGraph__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Device__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__WasmLoader__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__StatsGraph__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__rasteriser_NativeRasteriser__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__rasteriser_WasmRasteriser__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__Device__ = __webpack_require__(1);
+
+
 
 
 
@@ -242,26 +445,44 @@ const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 let w = new __WEBPACK_IMPORTED_MODULE_0__WasmLoader__["a" /* default */]();
-let s = new __WEBPACK_IMPORTED_MODULE_1__StatsGraph__["a" /* default */]();
+let s = new __WEBPACK_IMPORTED_MODULE_1__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_1__StatsGraph__["b" /* StatsMode */].MS);
 w.load("./wasm/test").then((wasm) => {
-    let device = new __WEBPACK_IMPORTED_MODULE_2__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT);
-    device.insert();
-    device.clear('#ff00ff');
-    // Allocate a buffer on the heap for our WASM code to write into
-    // Note that the boilerplate in wasm/test.js sets a limit of 16 MB
-    // although theoretically the maximum is 4 GB
-    let HEAP_buffer_ptr8 = wasm._malloc(PAGE_SIZE_BYTES);
-    // Now create a reverse-reference to the WASM heap as a JS TypedArray
-    // Which we can manipulate easily JS-side, e.g. copy into the Canvas
-    let view = new Uint8ClampedArray(wasm.buffer, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
-    requestAnimationFrame(render);
-    function render() {
-        s.begin();
-        wasm._addOne(128, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
-        device.flip(view);
-        s.end();
-        requestAnimationFrame(render);
+    // Create a rasteriser
+    let nraster = new __WEBPACK_IMPORTED_MODULE_2__rasteriser_NativeRasteriser__["a" /* default */]();
+    let wraster = new __WEBPACK_IMPORTED_MODULE_3__rasteriser_WasmRasteriser__["a" /* default */](wasm);
+    // Create a device, pass the rasteriser
+    let device = new __WEBPACK_IMPORTED_MODULE_4__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, nraster);
+    device.create();
+    nraster.fill(32, 0, 128);
+    // for (let x=0; x <640; x+=8)
+    // {
+    //   nraster.vline(x, 0, 479, 255,255,255);
+    //   nraster.vline(x+1, 0, 479, 0,0,0);
+    //   nraster.vline(x+2, 0, 479, 255,255,255);
+    // }
+    for (let t = 0; t < 10000; t++) {
+        nraster.line(Math.floor(Math.random() * SCR_WIDTH), Math.floor(Math.random() * SCR_HEIGHT), Math.floor(Math.random() * SCR_WIDTH), Math.floor(Math.random() * SCR_HEIGHT), Math.floor(Math.random() * 255), Math.floor(Math.random() * 255), Math.floor(Math.random() * 255));
     }
+    device.flip();
+    //
+    // requestAnimationFrame(render);
+    //
+    // function render()
+    // {
+    //   s.begin();
+    //   device.flip();
+    //   s.end();
+    //
+    //   // s.begin();
+    //   // for (let t:number = 0; t<60; t++)
+    //   // {
+    //   //   //wasm.a.addOne(128, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
+    //   //   device.flip(view);
+    //   // }
+    //   // s.end();
+    //   //
+    //   requestAnimationFrame(render);
+    // }
 });
 
 

@@ -61,7 +61,7 @@ module.exports = [
         },
         plugins: process.env.NODE_ENV != PRODUCTION_STR ? [] :
         [
-          new BabiliPlugin({removeConsole:true}, {comments: false, sourceMap: false})
+          //new BabiliPlugin({removeConsole:true}, {comments: false, sourceMap: false})
         ]
     }
 ];
