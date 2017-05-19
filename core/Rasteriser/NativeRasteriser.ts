@@ -1,7 +1,9 @@
 
-import IRasteriser           from './IRasteriser';
+import IRasteriser            from './IRasteriser';
+import Vector2                from '../Vector2';
+import Vector3                from '../Vector3';
 import {BYTES_PER_PIXEL,
-        ALPHA_MAGIC_NUMBER}  from '../sym';
+        ALPHA_MAGIC_NUMBER}   from '../sym';
 
 
 export default class NativeRasteriser implements IRasteriser
@@ -16,16 +18,11 @@ export default class NativeRasteriser implements IRasteriser
   buffer: Uint8ClampedArray;
   ready: boolean;
 
-  public triangle(): void {};
 
   constructor()
   {
-    this.ready = false;
 
-    this.triangle = () =>
-    {
-      console.log("Hell I'm a triangle");
-    }
+    this.ready = false;
   }
 
   public init(w: number, h: number)
@@ -40,7 +37,7 @@ export default class NativeRasteriser implements IRasteriser
   public line(x0, y0, x1, y1, r, g, b)
   {
     // Clipping?
-    
+
     let steep:boolean = false;
 
     if (Math.abs(x0-x1) < Math.abs(y0-y1))
@@ -80,48 +77,44 @@ export default class NativeRasteriser implements IRasteriser
     }
   }
 
-  // void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
-  //     bool steep = false;
-  //     if (std::abs(x0-x1)<std::abs(y0-y1)) {
-  //         std::swap(x0, y0);
-  //         std::swap(x1, y1);
-  //         steep = true;
-  //     }
-  //     if (x0>x1) {
-  //         std::swap(x0, x1);
-  //         std::swap(y0, y1);
-  //     }
-  //     int dx = x1-x0;
-  //     int dy = y1-y0;
-  //     int derror2 = std::abs(dy)*2;
-  //     int error2 = 0;
-  //     int y = y0;
-  //     for (int x=x0; x<=x1; x++) {
-  //         if (steep) {
-  //             image.set(y, x, color);
-  //         } else {
-  //             image.set(x, y, color);
-  //         }
-  //         error2 += derror2;
-  //         if (error2 > dx) {
-  //             y += (y1>y0?1:-1);
-  //             error2 -= dx*2;
-  //         }
-  //     }
-  // }
-
-  private xline(xd, yd, x1, y1, x2, y2, r, g, b)
+  // Draw a triangle using a bbox with barycentric coord rejection
+  // Heard about this method recently, I always used the top/bottom half tri
+  // approach which I'm told is a little old school. I think GPUs do it this
+  // way because it's easier to exec in parallel...  
+  public tri(points:Vector2[], r:number, g:number, b:number): void
   {
-    let ychange = yd / xd;
-    let y = y1;
-    for (let x=x1; x<=x2; x++)
+    // Get a bounding box from three points
+    let minx:number = Math.min(points[0].x, Math.min(points[1].x, points[2].x));
+    let maxx:number = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
+    let miny:number = Math.min(points[0].y, Math.min(points[1].y, points[2].y));
+    let maxy:number = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
+
+    let P = new Vector2();
+    let o = new Vector3();
+
+    // Scan a simple bbox
+    for ( let y=miny; y<=maxy; y++ )
     {
-      this.pset(x, Math.round(y), r, g, b);
-      y += ychange;
+      for (let x=minx; x<=maxx; x++ )
+      {
+        // Test each coord
+        P.x = x;
+        P.y = y;
+
+        // Can be massively optimised by unrolling this call
+        o = P.barycentric(points[0], points[1], points[2]);
+
+        if (o.x < 0 || o.y < 0 || o.z < 0) continue;
+
+        // This coord is in the triangle, draw it
+        this.pset( x, y, r, g, b );
+      }
     }
+
   }
 
-  public pset(x: number, y: number, r: number, g: number, b: number)
+
+  public pset(x: number, y: number, r: number, g: number, b: number): void
   {
     let o:number = y * this.width * BYTES_PER_PIXEL + x * BYTES_PER_PIXEL;
 

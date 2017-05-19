@@ -31,8 +31,8 @@ unsigned int buffer_num_bytes   = 0;
 
 void testExtern()
 {
-  vec3 v0, v1;
-  
+  vec3 v0, v1, out;
+
   v0.x = 1;
   v0.y = 2;
   v0.z = 3;
@@ -41,7 +41,7 @@ void testExtern()
   v1.y = 3;
   v1.z = 4;
 
-  vec3_sum(v0, v1);
+  vec3_add(v0, v1, out);
 }
 
 void init(unsigned int *buffer, unsigned int width, unsigned int height)

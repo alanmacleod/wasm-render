@@ -19,9 +19,11 @@ class WasmLoader
       // WASM not supported, end
       if (!('WebAssembly' in window))
       {
-        console.log('Could not load WASM');
+        console.log('😂 WebAssembly not supported. Is it 2015 where you are? 😂');
         return reject((<any>window).Module);
       }
+
+      console.log("💪 WebAssembly ENABLED! 💪");
 
       fetch(_wasm).then( response => {
         return response.arrayBuffer();

@@ -5,6 +5,7 @@ import NativeRasteriser               from './rasteriser/NativeRasteriser';
 import WasmRasteriser                 from './rasteriser/WasmRasteriser';
 import {WasmInstance}                 from './main.ext';
 import Device                         from './Device';
+import Vector2                        from './Vector2';
 
 const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
@@ -26,25 +27,33 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 
   nraster.fill(32,0,128);
 
+  let pts:Vector2[] = [
+      new Vector2(10, 10),
+      new Vector2(100, 100),
+      new Vector2(50, 200)
+  ];
+
+  nraster.tri(pts, 255, 0, 255);
+
   // for (let x=0; x <640; x+=8)
   // {
   //   nraster.vline(x, 0, 479, 255,255,255);
   //   nraster.vline(x+1, 0, 479, 0,0,0);
   //   nraster.vline(x+2, 0, 479, 255,255,255);
   // }
-
-  for (let t=0; t<10000; t++)
-  {
-    nraster.line(
-      Math.floor(Math.random() * SCR_WIDTH),
-      Math.floor(Math.random() * SCR_HEIGHT),
-      Math.floor(Math.random() * SCR_WIDTH),
-      Math.floor(Math.random() * SCR_HEIGHT),
-      Math.floor(Math.random() * 255),
-      Math.floor(Math.random() * 255),
-      Math.floor(Math.random() * 255)
-    );
-  }
+  //
+  // for (let t=0; t<10000; t++)
+  // {
+  //   nraster.line(
+  //     Math.floor(Math.random() * SCR_WIDTH),
+  //     Math.floor(Math.random() * SCR_HEIGHT),
+  //     Math.floor(Math.random() * SCR_WIDTH),
+  //     Math.floor(Math.random() * SCR_HEIGHT),
+  //     Math.floor(Math.random() * 255),
+  //     Math.floor(Math.random() * 255),
+  //     Math.floor(Math.random() * 255)
+  //   );
+  // }
 
 
 
