@@ -25,6 +25,14 @@ export default class SharedMemory
     return this.size;
   }
 
+  public copy(from:Uint8ClampedArray)
+  {
+    if (from.length != this._buffer.length)
+      console.warn("Array byte size mis-match, truncating will occur");
+
+    
+  }
+
   get heap(): ArrayBuffer
   {
     return this.wasm.buffer;

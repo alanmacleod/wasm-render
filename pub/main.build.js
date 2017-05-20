@@ -457,6 +457,10 @@ class SharedMemory {
         this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
         return this.size;
     }
+    copy(from) {
+        if (from.length != this._buffer.length)
+            console.warn("Array byte size mis-match, truncating will occur");
+    }
     get heap() {
         return this.wasm.buffer;
     }
