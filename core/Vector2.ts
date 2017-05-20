@@ -34,23 +34,21 @@ export default class Vector2
   public barycentric(a:Vector2, b:Vector2, c:Vector2): Vector3
   {
     // p = this
-      let v0 = b.sub(a);
-      let v1 = c.sub(a);
-      let v2 = this.sub(a);
-      let d00 = v0.dot(v0);
-      let d01 = v0.dot(v1);
-      let d11 = v1.dot(v1);
-      let d20 = v2.dot(v0);
-      let d21 = v2.dot(v1);
+      let v0 = b.sub(a);  // cache
+      let v1 = c.sub(a);  // cache
+      let v2 = this.sub(a); // RECALC
+      let d00 = v0.dot(v0); // cache
+      let d01 = v0.dot(v1); // cache
+      let d11 = v1.dot(v1); // cache
+      let d20 = v2.dot(v0); // RECALC
+      let d21 = v2.dot(v1); // RECALC
 
-      let denom = d00 * d11 - d01 * d01;
-      //float denom = d00 * d11 - d01 * d01;
-      let v = (d11 * d20 - d01 * d21) / denom;
-      //v = (d11 * d20 - d01 * d21) / denom;
-      let w = (d00 * d21 - d01 * d20) / denom;
-      //w = (d00 * d21 - d01 * d20) / denom;
+      let denom = 1 / (d00 * d11 - d01 * d01); // cache
+
+      let v = (d11 * d20 - d01 * d21) * denom; //a
+      let w = (d00 * d21 - d01 * d20) * denom;
       let u = 1.0 - v - w;
-      //u = 1.0f - v - w;
+
       return new Vector3(u, v, w);
   }
 

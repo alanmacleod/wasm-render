@@ -1,5 +1,6 @@
 
 import IRasteriser          from './IRasteriser';
+import SharedMemory         from '../SharedMemory'
 import {WasmInstance}       from '../main.ext';
 import {BYTES_PER_PIXEL,
         ALPHA_MAGIC_NUMBER}  from '../sym';
@@ -12,11 +13,8 @@ export default class WasmRasteriser implements IRasteriser
   private height:number;
   private pagesize:number;
 
-  // Real heap memory here
-  private heapbuffer: number;
+  private framebuffer:SharedMemory;
 
-  // Reference to the heap memory
-  buffer: Uint8ClampedArray;
   ready: boolean;
 
   constructor(wasm: WasmInstance)
@@ -31,19 +29,18 @@ export default class WasmRasteriser implements IRasteriser
     this.height = h;
     this.pagesize = w * h * BYTES_PER_PIXEL;
 
-    // Allocate buffer on the WASM heap
-    this.heapbuffer = this.wasm._malloc( this.pagesize );
+    // Alocate some shared memory
+    this.framebuffer = new SharedMemory( this.wasm, this.pagesize )
 
     // Tell the WASM exports where to find the heap data and also pass dims
-    this.wasm._init( this.heapbuffer, w, h );
-
-    // Now create a "reverse reference" to the heap using a JS TypedArray
-    this.buffer = new Uint8ClampedArray( this.wasm.buffer,
-      this.heapbuffer,
-      this.pagesize
-    );
+    this.wasm._init( this.framebuffer.pointer, w, h );
 
     this.ready = true;
+  }
+
+  get buffer():Uint8ClampedArray
+  {
+    return this.framebuffer.buffer;
   }
 
   private rgbpack(r:number,g:number,b:number): number

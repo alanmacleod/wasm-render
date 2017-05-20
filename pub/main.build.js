@@ -80,24 +80,9 @@ const ALPHA_MAGIC_NUMBER = 4278190080;
 
 
 /***/ }),
-/* 1 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-const X = 0, Y = 1;
-class Vector3 {
-    constructor(x = 0, y = 0, z = 0) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Vector3;
-
-
-
-/***/ }),
-/* 2 */
+/* 1 */,
+/* 2 */,
+/* 3 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -150,12 +135,12 @@ class Device {
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return StatsMode; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__ = __webpack_require__(8);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__);
 
 class StatsGraph {
@@ -187,7 +172,7 @@ var StatsMode;
 
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -201,10 +186,10 @@ class WasmLoader {
         return new Promise((resolve, reject) => {
             // WASM not supported, end
             if (!('WebAssembly' in window)) {
-                console.log('😂 WebAssembly not supported. Is it 2015 where you are? 😂');
+                console.log('😂 WebAssembly not supported. Cool browser bro. 😂');
                 return reject(window.Module);
             }
-            console.log("💪 WebAssembly ENABLED! 💪");
+            console.log("💪 WebAssembly ENABLED 💪");
             fetch(_wasm).then(response => {
                 return response.arrayBuffer();
             })
@@ -225,124 +210,14 @@ class WasmLoader {
 
 
 /***/ }),
-/* 5 */
+/* 6 */,
+/* 7 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector2__ = __webpack_require__(8);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Vector3__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__sym__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__SharedMemory__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__sym__ = __webpack_require__(0);
 
-
-
-class NativeRasteriser {
-    constructor() {
-        this.ready = false;
-    }
-    init(w, h) {
-        this.width = w;
-        this.height = h;
-        this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_2__sym__["a" /* BYTES_PER_PIXEL */];
-        this.buffer = new Uint8ClampedArray(this.pagesize);
-        this.ready = true;
-    }
-    line(x0, y0, x1, y1, r, g, b) {
-        // Clipping?
-        let steep = false;
-        if (Math.abs(x0 - x1) < Math.abs(y0 - y1)) {
-            [x0, y0] = [y0, x0];
-            [x1, y1] = [y1, x1];
-            steep = true;
-        }
-        if (x0 > x1) {
-            [x0, x1] = [x1, x0];
-            [y0, y1] = [y1, y0];
-        }
-        let dx = x1 - x0;
-        let dy = y1 - y0;
-        let derror2 = Math.abs(dy) * 2;
-        let error2 = 0;
-        let y = y0;
-        for (let x = x0; x <= x1; x++) {
-            if (steep) {
-                this.pset(y, x, r, g, b);
-            }
-            else {
-                this.pset(x, y, r, g, b);
-            }
-            error2 += derror2;
-            if (error2 > dx) {
-                y += (y1 > y0 ? 1 : -1);
-                error2 -= dx * 2;
-            }
-        }
-    }
-    // Draw a triangle using a bbox with barycentric coord rejection
-    // Heard about this method recently, I always used the top/bottom half tri
-    // approach which I'm told is a little old school. I think GPUs do it this
-    // way because it's easier to exec in parallel...  
-    tri(points, r, g, b) {
-        // Get a bounding box from three points
-        let minx = Math.min(points[0].x, Math.min(points[1].x, points[2].x));
-        let maxx = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
-        let miny = Math.min(points[0].y, Math.min(points[1].y, points[2].y));
-        let maxy = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
-        let P = new __WEBPACK_IMPORTED_MODULE_0__Vector2__["a" /* default */]();
-        let o = new __WEBPACK_IMPORTED_MODULE_1__Vector3__["a" /* default */]();
-        // Scan a simple bbox
-        for (let y = miny; y <= maxy; y++) {
-            for (let x = minx; x <= maxx; x++) {
-                // Test each coord
-                P.x = x;
-                P.y = y;
-                // Can be massively optimised by unrolling this call
-                o = P.barycentric(points[0], points[1], points[2]);
-                if (o.x < 0 || o.y < 0 || o.z < 0)
-                    continue;
-                // This coord is in the triangle, draw it
-                this.pset(x, y, r, g, b);
-            }
-        }
-    }
-    pset(x, y, r, g, b) {
-        let o = y * this.width * __WEBPACK_IMPORTED_MODULE_2__sym__["a" /* BYTES_PER_PIXEL */] + x * __WEBPACK_IMPORTED_MODULE_2__sym__["a" /* BYTES_PER_PIXEL */];
-        this.buffer[o + 0] = r;
-        this.buffer[o + 1] = g;
-        this.buffer[o + 2] = b;
-        this.buffer[o + 3] = 255;
-    }
-    vline(x, y1, y2, r, g, b) {
-        let hwidth = this.width * __WEBPACK_IMPORTED_MODULE_2__sym__["a" /* BYTES_PER_PIXEL */];
-        let xo = x * __WEBPACK_IMPORTED_MODULE_2__sym__["a" /* BYTES_PER_PIXEL */];
-        for (let y = y1; y <= y2; y++) {
-            let o = y * hwidth + xo;
-            this.buffer[o + 0] = r;
-            this.buffer[o + 1] = g;
-            this.buffer[o + 2] = b;
-            this.buffer[o + 3] = 255;
-        }
-    }
-    fill(r, g, b) {
-        for (let o = 0; o < this.pagesize; o += 4) {
-            this.buffer[o + 0] = r;
-            this.buffer[o + 1] = g;
-            this.buffer[o + 2] = b;
-            this.buffer[o + 3] = 255;
-        }
-    }
-    render() {
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = NativeRasteriser;
-
-
-
-/***/ }),
-/* 6 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__sym__ = __webpack_require__(0);
 
 class WasmRasteriser {
     constructor(wasm) {
@@ -352,18 +227,19 @@ class WasmRasteriser {
     init(w, h) {
         this.width = w;
         this.height = h;
-        this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_0__sym__["a" /* BYTES_PER_PIXEL */];
-        // Allocate buffer on the WASM heap
-        this.heapbuffer = this.wasm._malloc(this.pagesize);
+        this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_1__sym__["a" /* BYTES_PER_PIXEL */];
+        // Alocate some shared memory
+        this.framebuffer = new __WEBPACK_IMPORTED_MODULE_0__SharedMemory__["a" /* default */](this.wasm, this.pagesize);
         // Tell the WASM exports where to find the heap data and also pass dims
-        this.wasm._init(this.heapbuffer, w, h);
-        // Now create a "reverse reference" to the heap using a JS TypedArray
-        this.buffer = new Uint8ClampedArray(this.wasm.buffer, this.heapbuffer, this.pagesize);
+        this.wasm._init(this.framebuffer.pointer, w, h);
         this.ready = true;
+    }
+    get buffer() {
+        return this.framebuffer.buffer;
     }
     rgbpack(r, g, b) {
         // little-endian bytepack: aaaaaaaa bbbbbbbb gggggggg rrrrrrrr
-        return __WEBPACK_IMPORTED_MODULE_0__sym__["b" /* ALPHA_MAGIC_NUMBER */] + (b << 16) + (g << 8) + r;
+        return __WEBPACK_IMPORTED_MODULE_1__sym__["b" /* ALPHA_MAGIC_NUMBER */] + (b << 16) + (g << 8) + r;
     }
     pset(x, y, r, g, b) {
         this.wasm._pset(x, y, this.rgbpack(r, g, b));
@@ -383,7 +259,7 @@ class WasmRasteriser {
 
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // stats.js - http://github.com/mrdoob/stats.js
@@ -433,66 +309,15 @@ class WasmRasteriser {
 });
 
 /***/ }),
-/* 8 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(1);
-
-const X = 0, Y = 1;
-class Vector2 {
-    constructor(x = 0, y = 0) {
-        this.x = x;
-        this.y = y;
-    }
-    add(b) {
-        return new Vector2(b.x + this.x, b.y + this.y);
-    }
-    sub(b) {
-        return new Vector2(this.x - b.x, this.y - b.y);
-    }
-    dot(b) {
-        return (this.x * b.x) + (this.y * b.y);
-    }
-    barycentric(a, b, c) {
-        // p = this
-        let v0 = b.sub(a);
-        let v1 = c.sub(a);
-        let v2 = this.sub(a);
-        let d00 = v0.dot(v0);
-        let d01 = v0.dot(v1);
-        let d11 = v1.dot(v1);
-        let d20 = v2.dot(v0);
-        let d21 = v2.dot(v1);
-        let denom = d00 * d11 - d01 * d01;
-        //float denom = d00 * d11 - d01 * d01;
-        let v = (d11 * d20 - d01 * d21) / denom;
-        //v = (d11 * d20 - d01 * d21) / denom;
-        let w = (d00 * d21 - d01 * d20) / denom;
-        //w = (d00 * d21 - d01 * d20) / denom;
-        let u = 1.0 - v - w;
-        //u = 1.0f - v - w;
-        return new __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */](u, v, w);
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Vector2;
-
-
-
-/***/ }),
 /* 9 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__WasmLoader__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__StatsGraph__ = __webpack_require__(3);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__rasteriser_NativeRasteriser__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__rasteriser_WasmRasteriser__ = __webpack_require__(6);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__Device__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__Vector2__ = __webpack_require__(8);
-
-
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__WasmLoader__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__StatsGraph__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__rasteriser_WasmRasteriser__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__Device__ = __webpack_require__(3);
 
 
 
@@ -504,25 +329,26 @@ let w = new __WEBPACK_IMPORTED_MODULE_0__WasmLoader__["a" /* default */]();
 let s = new __WEBPACK_IMPORTED_MODULE_1__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_1__StatsGraph__["b" /* StatsMode */].MS);
 w.load("./wasm/WasmRasteriser").then((wasm) => {
     // Create a rasteriser
-    let nraster = new __WEBPACK_IMPORTED_MODULE_2__rasteriser_NativeRasteriser__["a" /* default */]();
-    let wraster = new __WEBPACK_IMPORTED_MODULE_3__rasteriser_WasmRasteriser__["a" /* default */](wasm);
+    //let nraster = new NativeRasteriser();
+    let wraster = new __WEBPACK_IMPORTED_MODULE_2__rasteriser_WasmRasteriser__["a" /* default */](wasm);
+    //console.log(wasm);
     // Create a device, pass the rasteriser
-    let device = new __WEBPACK_IMPORTED_MODULE_4__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, nraster);
+    let device = new __WEBPACK_IMPORTED_MODULE_3__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, wraster);
     device.create();
-    nraster.fill(32, 0, 128);
-    let pts = [
-        new __WEBPACK_IMPORTED_MODULE_5__Vector2__["a" /* default */](10, 10),
-        new __WEBPACK_IMPORTED_MODULE_5__Vector2__["a" /* default */](100, 100),
-        new __WEBPACK_IMPORTED_MODULE_5__Vector2__["a" /* default */](50, 200)
-    ];
-    nraster.tri(pts, 255, 0, 255);
-    // for (let x=0; x <640; x+=8)
-    // {
-    //   nraster.vline(x, 0, 479, 255,255,255);
-    //   nraster.vline(x+1, 0, 479, 0,0,0);
-    //   nraster.vline(x+2, 0, 479, 255,255,255);
-    // }
+    wraster.fill(32, 0, 128);
     //
+    // let pts:Vector2[] = [
+    //     new Vector2(10, 10),
+    //     new Vector2(100, 10),
+    //     new Vector2(10, 100)
+    // ];
+    //
+    // nraster.tri(pts, 255, 0, 255);
+    for (let x = 0; x < 640; x += 8) {
+        wraster.vline(x, 0, 479, 255, 255, 255);
+        wraster.vline(x + 1, 0, 479, 0, 0, 0);
+        wraster.vline(x + 2, 0, 479, 255, 255, 255);
+    }
     // for (let t=0; t<10000; t++)
     // {
     //   nraster.line(
@@ -536,26 +362,113 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     //   );
     // }
     device.flip();
-    //
-    // requestAnimationFrame(render);
-    //
-    // function render()
-    // {
-    //   s.begin();
-    //   device.flip();
-    //   s.end();
-    //
-    //   // s.begin();
-    //   // for (let t:number = 0; t<60; t++)
-    //   // {
-    //   //   //wasm.a.addOne(128, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
-    //   //   device.flip(view);
-    //   // }
-    //   // s.end();
-    //   //
-    //   requestAnimationFrame(render);
-    // }
+    requestAnimationFrame(render);
+    function render() {
+        s.begin();
+        device.flip();
+        s.end();
+        // s.begin();
+        // for (let t:number = 0; t<60; t++)
+        // {
+        //   //wasm.a.addOne(128, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
+        //   device.flip(view);
+        // }
+        // s.end();
+        //
+        requestAnimationFrame(render);
+    }
 });
+/*
+function runbenchmarks(wasm)
+{
+  const bsize = 65536;
+  const iterations = 5000;
+  let hm = wasm._malloc(bsize);
+  let wasmview = new Uint8Array(wasm.buffer, hm, bsize);
+  let realview = new Uint8Array(bsize);
+
+  let tstart = performance.now();
+  // write to buffer
+  for (let i=0; i<iterations; i++)
+  {
+    for (let o=0; o<bsize; o++)
+      wasmview[o] = 1;
+  }
+
+  let wasmtotal_write = performance.now() - tstart;
+
+  tstart = performance.now();
+  // write to buffer
+  for (let i=0; i<iterations; i++)
+  {
+    for (let o=0; o<bsize; o++)
+      realview[o] = 1;
+  }
+
+  let realtotal_write = performance.now() - tstart;
+
+  tstart = performance.now();
+  let v = 0;
+  // read
+  for (let i=0; i<iterations; i++)
+  {
+    for (let o=0; o<bsize; o++)
+      v = wasmview[o];
+  }
+
+  let wasmtotal_read = performance.now() - tstart;
+
+  tstart = performance.now();
+  v = 0;
+  // read
+  for (let i=0; i<iterations; i++)
+  {
+    for (let o=0; o<bsize; o++)
+      v = realview[o];
+  }
+
+  let realtotal_read = performance.now() - tstart;
+
+
+  console.log(`For ${iterations} WRITE iterations to ${bsize} bytes in WASM View took ${wasmtotal_write} ms`);
+  console.log(`For ${iterations} WRITE iterations to ${bsize} bytes in REAL View took ${realtotal_write} ms`);
+  console.log(`For ${iterations} READ iterations to ${bsize} bytes in WASM View took ${wasmtotal_read} ms`);
+  console.log(`For ${iterations} READ iterations to ${bsize} bytes in REAL View took ${realtotal_read} ms`);
+
+
+}
+*/
+
+
+/***/ }),
+/* 10 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+class SharedMemory {
+    constructor(wasminstance, sizebytes) {
+        this.wasm = wasminstance;
+        if (sizebytes)
+            this.allocate(sizebytes);
+    }
+    allocate(sizebytes) {
+        this.size = sizebytes;
+        this._heap = this.wasm._malloc(sizebytes);
+        this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
+        return this.size;
+    }
+    get heap() {
+        return this.wasm.buffer;
+    }
+    get buffer() {
+        return this._buffer;
+    }
+    get pointer() {
+        return this._heap;
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = SharedMemory;
+
 
 
 /***/ })

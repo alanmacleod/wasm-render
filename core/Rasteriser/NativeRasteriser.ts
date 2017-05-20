@@ -21,11 +21,10 @@ export default class NativeRasteriser implements IRasteriser
 
   constructor()
   {
-
     this.ready = false;
   }
 
-  public init(w: number, h: number)
+  public init(w: number, h: number): void
   {
     this.width = w;
     this.height = h;
@@ -79,8 +78,8 @@ export default class NativeRasteriser implements IRasteriser
 
   // Draw a triangle using a bbox with barycentric coord rejection
   // Heard about this method recently, I always used the top/bottom half tri
-  // approach which I'm told is a little old school. I think GPUs do it this
-  // way because it's easier to exec in parallel...  
+  // approach which I'm told is a little old school. I believe GPUs do it this
+  // way because it's easier to exec in parallel...
   public tri(points:Vector2[], r:number, g:number, b:number): void
   {
     // Get a bounding box from three points
@@ -88,6 +87,18 @@ export default class NativeRasteriser implements IRasteriser
     let maxx:number = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
     let miny:number = Math.min(points[0].y, Math.min(points[1].y, points[2].y));
     let maxy:number = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
+
+    // clipping
+    minx = Math.max(0, minx);
+    miny = Math.max(0, miny);
+    maxx = Math.min(this.width-1, maxx);
+    maxy = Math.min(this.height-1, maxy);
+
+    // off-screen test
+    if (maxx < 0) return;
+    if (maxy < 0) return;
+    if (minx >= this.width) return;
+    if (miny >= this.height) return;
 
     let P = new Vector2();
     let o = new Vector3();
@@ -104,10 +115,16 @@ export default class NativeRasteriser implements IRasteriser
         // Can be massively optimised by unrolling this call
         o = P.barycentric(points[0], points[1], points[2]);
 
+        // o = weighted ratio of each corner
+        // points[0] = o.x
+        // points[1] = o.y
+        // points[2] = o.z
+
         if (o.x < 0 || o.y < 0 || o.z < 0) continue;
 
         // This coord is in the triangle, draw it
         this.pset( x, y, r, g, b );
+
       }
     }
 
