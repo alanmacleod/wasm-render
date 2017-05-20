@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "/";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 9);
+/******/ 	return __webpack_require__(__webpack_require__.s = 7);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -80,9 +80,7 @@ const ALPHA_MAGIC_NUMBER = 4278190080;
 
 
 /***/ }),
-/* 1 */,
-/* 2 */,
-/* 3 */
+/* 1 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -135,12 +133,12 @@ class Device {
 
 
 /***/ }),
-/* 4 */
+/* 2 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return StatsMode; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__ = __webpack_require__(5);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__);
 
 class StatsGraph {
@@ -172,7 +170,7 @@ var StatsMode;
 
 
 /***/ }),
-/* 5 */
+/* 3 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -210,12 +208,11 @@ class WasmLoader {
 
 
 /***/ }),
-/* 6 */,
-/* 7 */
+/* 4 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__SharedMemory__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__SharedMemory__ = __webpack_require__(6);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__sym__ = __webpack_require__(0);
 
 
@@ -259,7 +256,7 @@ class WasmRasteriser {
 
 
 /***/ }),
-/* 8 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // stats.js - http://github.com/mrdoob/stats.js
@@ -309,15 +306,59 @@ class WasmRasteriser {
 });
 
 /***/ }),
-/* 9 */
+/* 6 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+class SharedMemory {
+    constructor(wasminstance, sizebytes) {
+        this.size = 0;
+        this.wasm = wasminstance;
+        if (sizebytes)
+            this.allocate(sizebytes);
+    }
+    // Lock a chunk of WASM heap
+    allocate(sizebytes) {
+        this.size = sizebytes;
+        this._heap = this.wasm._malloc(sizebytes);
+        this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
+        return this.size;
+    }
+    // Blit `from` -> `.buffer`
+    copy(from) {
+        if (!this.size)
+            throw ReferenceError("Copying into unallocated memory");
+        if (from.length != this._buffer.length)
+            console.warn("Array byte size mis-match, truncating will occur");
+        this._buffer.set(from);
+    }
+    // Warning: this returns a generic ref to the *entire* heap at base address!
+    get heap() {
+        return this.wasm.buffer;
+    }
+    // Return a ref to our buffer view into WASM space
+    get buffer() {
+        return this._buffer;
+    }
+    // Return the heap pointer in WASM space (C funcs will need this)
+    get pointer() {
+        return this._heap;
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = SharedMemory;
+
+
+
+/***/ }),
+/* 7 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__WasmLoader__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__StatsGraph__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__rasteriser_WasmRasteriser__ = __webpack_require__(7);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__Device__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__WasmLoader__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__StatsGraph__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__rasteriser_WasmRasteriser__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__Device__ = __webpack_require__(1);
 
 
 
@@ -330,6 +371,8 @@ let s = new __WEBPACK_IMPORTED_MODULE_1__StatsGraph__["a" /* default */](__WEBPA
 w.load("./wasm/WasmRasteriser").then((wasm) => {
     // Create a rasteriser
     //let nraster = new NativeRasteriser();
+    // let t = new Texture(wasm, "./img/test-texture.png");
+    // return;
     let wraster = new __WEBPACK_IMPORTED_MODULE_2__rasteriser_WasmRasteriser__["a" /* default */](wasm);
     //console.log(wasm);
     // Create a device, pass the rasteriser
@@ -438,41 +481,6 @@ function runbenchmarks(wasm)
 
 }
 */
-
-
-/***/ }),
-/* 10 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-class SharedMemory {
-    constructor(wasminstance, sizebytes) {
-        this.wasm = wasminstance;
-        if (sizebytes)
-            this.allocate(sizebytes);
-    }
-    allocate(sizebytes) {
-        this.size = sizebytes;
-        this._heap = this.wasm._malloc(sizebytes);
-        this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
-        return this.size;
-    }
-    copy(from) {
-        if (from.length != this._buffer.length)
-            console.warn("Array byte size mis-match, truncating will occur");
-    }
-    get heap() {
-        return this.wasm.buffer;
-    }
-    get buffer() {
-        return this._buffer;
-    }
-    get pointer() {
-        return this._heap;
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = SharedMemory;
-
 
 
 /***/ })

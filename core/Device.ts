@@ -6,7 +6,6 @@
 import IRasteriser       from './rasteriser/IRasteriser';
 import {BYTES_PER_PIXEL} from './sym';
 
-
 // rename VideoDevice() as will extend to include texture "memory" etc
 export default class Device
 {

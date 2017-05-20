@@ -44,8 +44,13 @@ export default class Texture
 
       this.data = new SharedMemory( this.wasm, BYTES_PER_PIXEL * i.width * i.height );
 
-      this.data.copy(data);
+      // Blit the pixel byte data into the WASM heap
+      // GC will pick up our `data` object
+      this.data.copy( data );
       this.ready = true;
+
+      data = null;
+
     }
 
   }

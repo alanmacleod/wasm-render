@@ -1,5 +1,6 @@
 
 import WasmLoader                     from './WasmLoader';
+import Texture                        from './Texture';
 import StatsGraph, {StatsMode}        from './StatsGraph';
 import NativeRasteriser               from './rasteriser/NativeRasteriser';
 import WasmRasteriser                 from './rasteriser/WasmRasteriser';
@@ -18,6 +19,10 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 {
   // Create a rasteriser
   //let nraster = new NativeRasteriser();
+
+  // let t = new Texture(wasm, "./img/test-texture.png");
+  // return;
+  
   let wraster = new WasmRasteriser(wasm);
 
   //console.log(wasm);
