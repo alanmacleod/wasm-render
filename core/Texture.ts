@@ -1,13 +1,15 @@
 
 import SharedMemory         from './SharedMemory'
 import {WasmInstance}       from './main.ext';
-import {BYTES_PER_PIXEL}    from './sym';
+import {BYTES_PER_PIXEL}    from './Sym';
 
 // Texture data is essentially stored in a plain Uint8 array
 // located on the WASM heap via SharedMemory so accessible to JS and WASM code
 
 export default class Texture
 {
+  public maxu: number;
+  public maxv: number;
   public width: number;
   public height: number;
   public data: SharedMemory;
@@ -22,10 +24,12 @@ export default class Texture
     this.wasm = wasminstance;
   }
 
+  // Use the DOM/HTML/browser to get the data with a hidden '<img>' element
   public load(url:string):void
   {
     let i:HTMLImageElement = document.createElement( 'img' );
 
+    document.body.appendChild(i);
     i.src = url;
 
     i.onload = () =>
@@ -33,10 +37,13 @@ export default class Texture
       let canvas = document.createElement( "canvas" );
       let ctx = canvas.getContext( '2d' );
 
-      this.width = i.width;
-      this.height = i.height;
+      this.maxu = i.width - 1;
+      this.maxv = i.height - 1;
       canvas.width = i.width;
       canvas.height = i.height;
+
+      this.width = i.width;
+      this.height = i.height;
 
       ctx.drawImage( i, 0, 0, i.width, i.height, 0, 0, i.width, i.height );
 
@@ -48,9 +55,8 @@ export default class Texture
       // GC will pick up our `data` object
       this.data.copy( data );
       this.ready = true;
-
+      //cb(data.data);
       data = null;
-
     }
 
   }

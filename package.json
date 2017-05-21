@@ -1,14 +1,18 @@
 {
   "name": "wasm-render",
   "version": "0.0.1",
-  "description": "Software rasteriser written in WASM/C & Javascript to test WebAssembly and compare performance",
+  "description": "Software rasteriser written in WASM/C & TypeScript to test WebAssembly and compare performance",
   "main": "main.js",
   "scripts": {
     "test": "npm run test",
     "wasm-init": "wasm-init",
     "compile": "wasm-compile",
+
     "build": "webpack",
-    "watch": "webpack -w"
+    "watch": "webpack -w",
+
+    "prebuildall": "wasm-compile",
+    "buildall": "webpack"
   },
   "repository": {
     "type": "git",

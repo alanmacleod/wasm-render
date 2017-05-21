@@ -4,7 +4,7 @@
 // Accepts a Uint8 buffer for rendering
 
 import IRasteriser       from './rasteriser/IRasteriser';
-import {BYTES_PER_PIXEL} from './sym';
+import {BYTES_PER_PIXEL} from './Sym';
 
 // rename VideoDevice() as will extend to include texture "memory" etc
 export default class Device
@@ -27,7 +27,7 @@ export default class Device
     this.bytes = width * height * BYTES_PER_PIXEL;
   }
 
-  public create(element?:string)
+  public create(element?:string): void
   {
     let e:HTMLElement = !(element) ? document.body :
                                      document.getElementById( element );
@@ -40,15 +40,15 @@ export default class Device
     this.canvas = c;
     this.context = this.canvas.getContext( '2d' );
 
-    this.clear();
-
     // the actual pixel data
     this.imageData = this.context.getImageData( 0, 0, this.width, this.height );
 
     e.appendChild( c );
+
+    this.clear();
   }
 
-  public use(rasteriser:IRasteriser)
+  public use(rasteriser:IRasteriser): void
   {
     if (!rasteriser.ready)
       rasteriser.init( this.width, this.height );
@@ -56,14 +56,14 @@ export default class Device
     this.rasteriser = rasteriser;
   }
 
-  public clear(colour:string = "0xffffff")
+  public clear(colour:string = "#000000"): void
   {
     this.context.fillStyle = colour;
     this.context.fillRect( 0, 0, this.width, this.height );
   }
 
-  // Old school points for anyone who smiles at 'flip'
-  public flip()
+  // Old school points for smiling at 'flip'
+  public flip(): void
   {
     if (!this.rasteriser.buffer)
       throw new ReferenceError("`rasteriser.buffer: Uint8ClampedArray` is required!");

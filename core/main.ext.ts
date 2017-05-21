@@ -1,5 +1,7 @@
 
-// Define interfaces for external js objects
+// Define interfaces for external js contracts
+
+
 
 // Global mess made by Emscripten's boilerplate
 export interface WasmInstance

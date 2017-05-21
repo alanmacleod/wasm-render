@@ -3,7 +3,7 @@ import IRasteriser          from './IRasteriser';
 import SharedMemory         from '../SharedMemory'
 import {WasmInstance}       from '../main.ext';
 import {BYTES_PER_PIXEL,
-        ALPHA_MAGIC_NUMBER}  from '../sym';
+        ALPHA_MAGIC_NUMBER}  from '../Sym';
 
 
 export default class WasmRasteriser implements IRasteriser

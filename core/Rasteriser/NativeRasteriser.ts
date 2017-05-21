@@ -1,10 +1,12 @@
 
+// "Native" probably a bit misleading. More of a "Reference" rasteriser
+
 import IRasteriser            from './IRasteriser';
+import Texture                from '../Texture';
 import Vector2                from '../Vector2';
 import Vector3                from '../Vector3';
 import {BYTES_PER_PIXEL,
-        ALPHA_MAGIC_NUMBER}   from '../sym';
-
+        ALPHA_MAGIC_NUMBER}   from '../Sym';
 
 export default class NativeRasteriser implements IRasteriser
 {
@@ -122,7 +124,76 @@ export default class NativeRasteriser implements IRasteriser
 
         if (o.x < 0 || o.y < 0 || o.z < 0) continue;
 
+        // Mul o by coords to get u,v
+
         // This coord is in the triangle, draw it
+        this.pset( x, y, r, g, b );
+
+      }
+    }
+
+  }
+
+  public tritex(points:Vector2[], uvs:Vector2[],tex: Texture, r:number, g:number, b:number): void
+  {
+    // temp for testing
+    if (!tex.ready) return;
+
+    // Get a bounding box from three points
+    let minx:number = Math.min(points[0].x, Math.min(points[1].x, points[2].x));
+    let maxx:number = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
+    let miny:number = Math.min(points[0].y, Math.min(points[1].y, points[2].y));
+    let maxy:number = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
+
+    // clipping
+    minx = Math.max(0, minx);
+    miny = Math.max(0, miny);
+    maxx = Math.min(this.width-1, maxx);
+    maxy = Math.min(this.height-1, maxy);
+
+    // off-screen test
+    if (maxx < 0) return;
+    if (maxy < 0) return;
+    if (minx >= this.width) return;
+    if (miny >= this.height) return;
+
+    let P = new Vector2();
+    let o = new Vector3();
+
+    let texels = tex.data.buffer;
+    let texmaxu= tex.maxu;
+    let texmaxv = tex.maxv;
+    let texw = tex.width;
+    let texh = tex.height;
+
+
+    // Scan a simple bbox
+    for ( let y=miny; y<=maxy; y++ )
+    {
+      for ( let x=minx; x<=maxx; x++ )
+      {
+        // Test each coord
+        P.x = x;
+        P.y = y;
+
+        // Can be massively optimised by unrolling this call
+        o = P.barycentric( points[0], points[1], points[2] );
+
+        // o = weighted ratio of each corner
+        // points[0] = o.x
+        // points[1] = o.y
+        // points[2] = o.z
+
+        if (o.x < 0 || o.y < 0 || o.z < 0) continue;
+
+        let u = Math.round((uvs[0].x * o.x + uvs[1].x * o.y + uvs[2].x * o.z ) * texmaxu);
+        let v = Math.round((uvs[0].y * o.x + uvs[1].y * o.y + uvs[2].y * o.z) * texmaxv);
+
+        let c = (v * texw * BYTES_PER_PIXEL) + (u * BYTES_PER_PIXEL);
+        let r = texels[ c+0 ];
+        let g = texels[ c+1 ];
+        let b = texels[ c+2 ];
+
         this.pset( x, y, r, g, b );
 
       }

@@ -1,13 +1,12 @@
 
 
+
+// Errrr not sure how to properly handle this global member mess in TS?
 (<any>window).Module = {};
 
-class WasmLoader
+export default class WasmLoader
 {
-  constructor()
-  {
-
-  }
+  constructor() { }
 
   load(wasm: string)
   {
@@ -49,5 +48,3 @@ class WasmLoader
   }
 
 }
-
-export default WasmLoader;

@@ -1,6 +1,8 @@
 
 // WasmRasteriser.c
-//        Alan MacLeod 2017
+//        Alan MacLeod, 2017
+//        alanmacleod.eu
+//        github.com/alanmacleod
 
 #include <stdio.h>
 #include <stdbool.h>
