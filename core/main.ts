@@ -29,25 +29,29 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 
   nraster.fill(32,0,128);
 
-  let pts:Vector2[] = [
-      new Vector2(10, 10),
-      new Vector2(450, 10),
-      new Vector2(10, 450)
-  ];
+  nraster.line(-10, -10, 1000, 1000, 255, 255, 255, true);
 
-  let uvs:Vector2[] = [
-    new Vector2(0,0),
-    new Vector2(1,0),
-    new Vector2(0,1)
-  ];
+  device.flip();
 
-  // timeout for testing so the .PNG can load
-  window.setTimeout(() => {
-    
-    nraster.tritex(pts,uvs,t, 255, 0, 255)
-    device.flip();
-
- }, 200);
+ //  let pts:Vector2[] = [
+ //      new Vector2(10, 10),
+ //      new Vector2(450, 10),
+ //      new Vector2(10, 450)
+ //  ];
+ //
+ //  let uvs:Vector2[] = [
+ //    new Vector2(0,0),
+ //    new Vector2(1,0),
+ //    new Vector2(0,1)
+ //  ];
+ //
+ //  // timeout for testing so the .PNG can load
+ //  window.setTimeout(() => {
+ //
+ //    nraster.tritex(pts,uvs,t, 255, 0, 255)
+ //    device.flip();
+ //
+ // }, 200);
 
   // for (let x=0; x <640; x+=8)
   // {

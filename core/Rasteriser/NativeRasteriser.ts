@@ -2,6 +2,7 @@
 // "Native" probably a bit misleading. More of a "Reference" rasteriser
 
 import IRasteriser            from './IRasteriser';
+import Clip                   from './Clip';
 import Texture                from '../Texture';
 import Vector2                from '../Vector2';
 import Vector3                from '../Vector3';
@@ -15,11 +16,10 @@ export default class NativeRasteriser implements IRasteriser
   private pagesize:number;
   // private numpixels:number;
 
-  // TODO: Perhaps use Uint32 view for cleaner writes?
+  // TODO: Perhaps use Uint32 bytepack view for cleaner/faster/easier writes?
   // Real TypedArray to emulate wasm heap
   buffer: Uint8ClampedArray;
   ready: boolean;
-
 
   constructor()
   {
@@ -35,9 +35,14 @@ export default class NativeRasteriser implements IRasteriser
     this.ready = true;
   }
 
-  public line(x0, y0, x1, y1, r, g, b)
+  public line(x0, y0, x1, y1, r, g, b, clip?:boolean)
   {
-    // Clipping?
+    if (clip)
+    {
+      let lo = Clip.line(x0, y0, x1, y1, 0, 0, this.width-1, this.height-1);
+      if (!lo.visible) return;
+      [x0, y0, x1, y1] = [lo.x0, lo.y0, lo.x1, lo.y1];
+    }
 
     let steep:boolean = false;
 

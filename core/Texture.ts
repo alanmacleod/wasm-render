@@ -29,7 +29,6 @@ export default class Texture
   {
     let i:HTMLImageElement = document.createElement( 'img' );
 
-    document.body.appendChild(i);
     i.src = url;
 
     i.onload = () =>
@@ -55,7 +54,7 @@ export default class Texture
       // GC will pick up our `data` object
       this.data.copy( data );
       this.ready = true;
-      //cb(data.data);
+      i = null;
       data = null;
     }
 
