@@ -1,4 +1,5 @@
 
+import Mesh                           from './mesh/Mesh';
 import WasmLoader                     from './WasmLoader';
 import Texture                        from './Texture';
 import StatsGraph, {StatsMode}        from './StatsGraph';
@@ -7,6 +8,7 @@ import WasmRasteriser                 from './rasteriser/WasmRasteriser';
 import {WasmInstance}                 from './main.ext';
 import Device                         from './Device';
 import Vector2                        from './Vector2';
+import Vector3                        from './Vector3';
 
 const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
@@ -15,6 +17,8 @@ const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 let w = new WasmLoader();
 let s = new StatsGraph(StatsMode.MS);
 
+let m = new Mesh();
+m.boxgeometry(1,1,1);
 
 w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 {
@@ -28,30 +32,33 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   let t = new Texture(wasm, "./img/test-texture.png");
 
   nraster.fill(32,0,128);
+  //nraster.renderm(m);
 
-  nraster.line(-10, -10, 1000, 1000, 255, 255, 255, true);
+  //nraster.line(-10, -10, 1000, 1000, 255, 255, 255, true);
 
-  device.flip();
 
- //  let pts:Vector2[] = [
- //      new Vector2(10, 10),
- //      new Vector2(450, 10),
- //      new Vector2(10, 450)
- //  ];
- //
- //  let uvs:Vector2[] = [
- //    new Vector2(0,0),
- //    new Vector2(1,0),
- //    new Vector2(0,1)
- //  ];
- //
- //  // timeout for testing so the .PNG can load
- //  window.setTimeout(() => {
- //
- //    nraster.tritex(pts,uvs,t, 255, 0, 255)
- //    device.flip();
- //
- // }, 200);
+
+  //device.flip();
+
+  let pts:Vector2[] = [
+      new Vector2(10, 10),
+      new Vector2(450, 10),
+      new Vector2(10, 450)
+  ];
+
+  let uvs:Vector2[] = [
+    new Vector2(0,0),
+    new Vector2(1,0),
+    new Vector2(0,1)
+  ];
+
+  // timeout for testing so the .PNG can load
+  window.setTimeout(() => {
+
+    nraster.tritex(pts,uvs,t, 255, 0, 255)
+    device.flip();
+
+ }, 200);
 
   // for (let x=0; x <640; x+=8)
   // {

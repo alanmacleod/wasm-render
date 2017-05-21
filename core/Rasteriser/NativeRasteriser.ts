@@ -3,10 +3,11 @@
 
 import IRasteriser            from './IRasteriser';
 import Clip                   from './Clip';
+import Mesh                   from '../mesh/Mesh';
 import Texture                from '../Texture';
 import Vector2                from '../Vector2';
 import Vector3                from '../Vector3';
-import {BYTES_PER_PIXEL,
+import {BYTES_PER_PIXEL, BIT_SHIFT_PER_PIXEL,
         ALPHA_MAGIC_NUMBER}   from '../Sym';
 
 export default class NativeRasteriser implements IRasteriser
@@ -39,9 +40,9 @@ export default class NativeRasteriser implements IRasteriser
   {
     if (clip)
     {
-      let lo = Clip.line(x0, y0, x1, y1, 0, 0, this.width-1, this.height-1);
+      let lo = Clip.line( x0, y0, x1, y1, 0, 0, this.width-1, this.height-1 );
       if (!lo.visible) return;
-      [x0, y0, x1, y1] = [lo.x0, lo.y0, lo.x1, lo.y1];
+      [ x0, y0, x1, y1 ] = [ lo.x0, lo.y0, lo.x1, lo.y1 ];
     }
 
     let steep:boolean = false;
@@ -107,8 +108,11 @@ export default class NativeRasteriser implements IRasteriser
     if (minx >= this.width) return;
     if (miny >= this.height) return;
 
+    // minx = 0; miny=0; maxx=this.width-1; maxy=this.height-1;
+
     let P = new Vector2();
-    let o = new Vector3();
+    //let o = new Vector3();
+    let o = [0,0,0];
 
     // Scan a simple bbox
     for ( let y=miny; y<=maxy; y++ )
@@ -127,7 +131,7 @@ export default class NativeRasteriser implements IRasteriser
         // points[1] = o.y
         // points[2] = o.z
 
-        if (o.x < 0 || o.y < 0 || o.z < 0) continue;
+        if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
         // Mul o by coords to get u,v
 
@@ -163,7 +167,7 @@ export default class NativeRasteriser implements IRasteriser
     if (miny >= this.height) return;
 
     let P = new Vector2();
-    let o = new Vector3();
+    let o = [0,0,0];
 
     let texels = tex.data.buffer;
     let texmaxu= tex.maxu;
@@ -181,30 +185,28 @@ export default class NativeRasteriser implements IRasteriser
         P.x = x;
         P.y = y;
 
+        // barycentric is _all_ about Barry
         // Can be massively optimised by unrolling this call
         o = P.barycentric( points[0], points[1], points[2] );
 
-        // o = weighted ratio of each corner
-        // points[0] = o.x
-        // points[1] = o.y
-        // points[2] = o.z
+        if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
-        if (o.x < 0 || o.y < 0 || o.z < 0) continue;
+        let u = Math.round((uvs[0].x * o[0] + uvs[1].x * o[1] + uvs[2].x * o[2] ) * texmaxu);
+        let v = Math.round((uvs[0].y * o[0] + uvs[1].y * o[1] + uvs[2].y * o[2] ) * texmaxv);
 
-        let u = Math.round((uvs[0].x * o.x + uvs[1].x * o.y + uvs[2].x * o.z ) * texmaxu);
-        let v = Math.round((uvs[0].y * o.x + uvs[1].y * o.y + uvs[2].y * o.z) * texmaxv);
-
-        let c = (v * texw * BYTES_PER_PIXEL) + (u * BYTES_PER_PIXEL);
+        let c = (v * texw << BIT_SHIFT_PER_PIXEL) + (u << BIT_SHIFT_PER_PIXEL);
         let r = texels[ c+0 ];
         let g = texels[ c+1 ];
         let b = texels[ c+2 ];
 
+        // ..and not doing this
         this.pset( x, y, r, g, b );
 
       }
     }
 
   }
+
 
 
   public pset(x: number, y: number, r: number, g: number, b: number): void
@@ -244,8 +246,43 @@ export default class NativeRasteriser implements IRasteriser
     }
   }
 
+  renderm(m: Mesh)
+  {
+    let c = 0;
+    let light = new Vector3(0,0,-1);
+    for (let f of m.faces)
+    {
+      let r = Math.floor(Math.random() * 255);
+      let g = Math.floor(Math.random() * 255);
+      let b = Math.floor(Math.random() * 255);
+
+      let scoords = [];
+      let wcoords = [];
+
+      for (let i=0; i<3; i++)
+      {
+        let v = m.vertices[f[i]];
+
+        // "projection"
+        let x0 = this.width / 2 + (v[0] * this.width / 4);
+        let y0 = this.height / 2 - (v[1] * this.height / 4 );
+
+        scoords.push(new Vector2(x0, y0));
+
+        // eugh
+        wcoords.push(new Vector3(v[0], v[1], v[2]));
+      }
+      let normal = (wcoords[2].sub(wcoords[1])).cross(wcoords[1].sub(wcoords[0])).norm();
+      let power = normal.dot(light);
+
+      if (power > 0)
+        this.tri(scoords, r*power, g*power, b*power);
+    //  break;
+    }
+  }
   render()
   {
+
 
   }
 }

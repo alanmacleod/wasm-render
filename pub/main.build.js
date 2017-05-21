@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "/";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 11);
+/******/ 	return __webpack_require__(__webpack_require__.s = 12);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -74,6 +74,10 @@
 const BYTES_PER_PIXEL = 4;
 /* harmony export (immutable) */ __webpack_exports__["a"] = BYTES_PER_PIXEL;
 
+const BIT_SHIFT_PER_PIXEL = 2;
+/* unused harmony export BIT_SHIFT_PER_PIXEL */
+ // e.g. texelU << 2
+// e.g. texelU << 2
 const ALPHA_MAGIC_NUMBER = 4278190080;
 /* harmony export (immutable) */ __webpack_exports__["b"] = ALPHA_MAGIC_NUMBER;
 
@@ -81,49 +85,6 @@ const ALPHA_MAGIC_NUMBER = 4278190080;
 
 /***/ }),
 /* 1 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(3);
-
-const X = 0, Y = 1;
-class Vector2 {
-    constructor(x = 0, y = 0) {
-        this.x = x;
-        this.y = y;
-    }
-    add(b) {
-        return new Vector2(b.x + this.x, b.y + this.y);
-    }
-    sub(b) {
-        return new Vector2(this.x - b.x, this.y - b.y);
-    }
-    dot(b) {
-        return (this.x * b.x) + (this.y * b.y);
-    }
-    barycentric(a, b, c) {
-        // p = this
-        let v0 = b.sub(a); // cache
-        let v1 = c.sub(a); // cache
-        let v2 = this.sub(a); // RECALC
-        let d00 = v0.dot(v0); // cache
-        let d01 = v0.dot(v1); // cache
-        let d11 = v1.dot(v1); // cache
-        let d20 = v2.dot(v0); // RECALC
-        let d21 = v2.dot(v1); // RECALC
-        let denom = 1 / (d00 * d11 - d01 * d01); // cache
-        let v = (d11 * d20 - d01 * d21) * denom; //a
-        let w = (d00 * d21 - d01 * d20) * denom;
-        let u = 1.0 - v - w;
-        return new __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */](u, v, w);
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Vector2;
-
-
-
-/***/ }),
-/* 2 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -167,16 +128,71 @@ class SharedMemory {
 
 
 /***/ }),
-/* 3 */
+/* 2 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-const X = 0, Y = 1;
+// Vector3.ts
+//        offers static overloads operating on simple arrays for speed
+// Passing the `out` by reference instead of creating & returning `out`
+// is literally twice the speed (Chrome 58). As it always was in the C days!
+// So doing it like this with TS's phoney static methods. GC working less
 class Vector3 {
     constructor(x = 0, y = 0, z = 0) {
         this.x = x;
         this.y = y;
         this.z = z;
+    }
+    // Static Methods ///////////////////////////////////////////////////////////
+    static add(a, b, out) {
+        out[0] = a[0] + b[0];
+        out[1] = a[1] + b[1];
+        out[2] = a[2] + b[2];
+    }
+    static sub(a, b, out) {
+        out[0] = a[0] - b[0];
+        out[1] = a[1] - b[1];
+        out[2] = a[2] - b[2];
+    }
+    static norm(v, out) {
+        let m = Vector3.mag(v);
+        if (m == 0)
+            out = [];
+        else
+            [out[0], out[1], out[2]] = [v[0] / m, v[1] / m, v[2] / m];
+    }
+    static mag(v) {
+        return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    }
+    static dot(a, b) {
+        return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
+    }
+    static cross(a, b, out) {
+        out[0] = a[1] * b[2] - a[2] * b[1];
+        out[1] = a[2] * b[0] - a[0] * b[2];
+        out[2] = a[0] * b[1] - a[1] * b[0];
+    }
+    // Instance Methods /////////////////////////////////////////////////////////
+    add(b) {
+        return new Vector3(this.x + b.x, this.y + b.y, this.z + b.z);
+    }
+    sub(b) {
+        return new Vector3(this.x - b.x, this.y - b.y, this.z - b.z);
+    }
+    norm() {
+        let m = this.mag();
+        if (m == 0)
+            return new Vector3();
+        return new Vector3(this.x / m, this.y / m, this.z / m);
+    }
+    mag() {
+        return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+    }
+    dot(b) {
+        return (this.x * b.x) + (this.y * b.y) + (this.z * b.z);
+    }
+    cross(b) {
+        return new Vector3(this.y * b.z - this.z * b.y, this.z * b.x - this.x * b.z, this.x * b.y - this.y * b.x);
     }
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = Vector3;
@@ -184,7 +200,7 @@ class Vector3 {
 
 
 /***/ }),
-/* 4 */
+/* 3 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -237,7 +253,7 @@ class Device {
 
 
 /***/ }),
-/* 5 */
+/* 4 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -274,11 +290,11 @@ var StatsMode;
 
 
 /***/ }),
-/* 6 */
+/* 5 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__SharedMemory__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__SharedMemory__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Sym__ = __webpack_require__(0);
 
 
@@ -323,7 +339,7 @@ class Texture {
 
 
 /***/ }),
-/* 7 */
+/* 6 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -362,13 +378,71 @@ class WasmLoader {
 
 
 /***/ }),
+/* 7 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+class Mesh {
+    constructor() { }
+    boxgeometry(width, height, depth) {
+        this.vertices = [
+            // y = -1
+            [1, -1, 1],
+            [-1, -1, 1],
+            [-1, -1, -1],
+            [1, -1, -1],
+            // y = +1
+            [1, 1, 1],
+            [-1, 1, 1],
+            [-1, 1, -1],
+            [1, 1, -1],
+        ];
+        const A = 0, B = 1, C = 2, D = 3, AA = 4, BB = 5, CC = 6, DD = 7;
+        this.faces = [
+            // -y: Bottom
+            // [A, C, B],
+            // [A, D, C],
+            // // +y: top
+            // [AA, CC, BB],
+            // [AA, DD, CC],
+            // // +x side
+            // [AA, DD, A],
+            // [DD, D, A],
+            // // -x side
+            // [BB, C, CC],
+            // [BB, B, C],
+            // +z side
+            [AA, B, A],
+            [AA, BB, B],
+        ];
+        //  let uvs:Vector2[] = [
+        //    new Vector2(0,0),
+        //    new Vector2(1,0),
+        //    new Vector2(0,1)
+        //  ];
+        this.uvs = [
+            [[1, 0], [0, 1], [1, 0]],
+            [[1, 0], [0, 0], [0, 1]]
+        ];
+        for (let v of this.vertices) {
+            v[0] *= width;
+            v[1] *= height;
+            v[2] *= depth;
+        }
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Mesh;
+
+
+
+/***/ }),
 /* 8 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Clip__ = __webpack_require__(12);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Vector2__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Vector3__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Clip__ = __webpack_require__(13);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Vector2__ = __webpack_require__(11);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Vector3__ = __webpack_require__(2);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__Sym__ = __webpack_require__(0);
 // "Native" probably a bit misleading. More of a "Reference" rasteriser
 
@@ -446,8 +520,10 @@ class NativeRasteriser {
             return;
         if (miny >= this.height)
             return;
+        // minx = 0; miny=0; maxx=this.width-1; maxy=this.height-1;
         let P = new __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */]();
-        let o = new __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */]();
+        //let o = new Vector3();
+        let o = [0, 0, 0];
         // Scan a simple bbox
         for (let y = miny; y <= maxy; y++) {
             for (let x = minx; x <= maxx; x++) {
@@ -460,7 +536,7 @@ class NativeRasteriser {
                 // points[0] = o.x
                 // points[1] = o.y
                 // points[2] = o.z
-                if (o.x < 0 || o.y < 0 || o.z < 0)
+                if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
                 // Mul o by coords to get u,v
                 // This coord is in the triangle, draw it
@@ -492,7 +568,7 @@ class NativeRasteriser {
         if (miny >= this.height)
             return;
         let P = new __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */]();
-        let o = new __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */]();
+        let o = [0, 0, 0];
         let texels = tex.data.buffer;
         let texmaxu = tex.maxu;
         let texmaxv = tex.maxv;
@@ -504,20 +580,18 @@ class NativeRasteriser {
                 // Test each coord
                 P.x = x;
                 P.y = y;
+                // barycentric is _all_ about Barry
                 // Can be massively optimised by unrolling this call
                 o = P.barycentric(points[0], points[1], points[2]);
-                // o = weighted ratio of each corner
-                // points[0] = o.x
-                // points[1] = o.y
-                // points[2] = o.z
-                if (o.x < 0 || o.y < 0 || o.z < 0)
+                if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
-                let u = Math.round((uvs[0].x * o.x + uvs[1].x * o.y + uvs[2].x * o.z) * texmaxu);
-                let v = Math.round((uvs[0].y * o.x + uvs[1].y * o.y + uvs[2].y * o.z) * texmaxv);
-                let c = (v * texw * __WEBPACK_IMPORTED_MODULE_3__Sym__["a" /* BYTES_PER_PIXEL */]) + (u * __WEBPACK_IMPORTED_MODULE_3__Sym__["a" /* BYTES_PER_PIXEL */]);
+                let u = Math.round((uvs[0].x * o[0] + uvs[1].x * o[1] + uvs[2].x * o[2]) * texmaxu);
+                let v = Math.round((uvs[0].y * o[0] + uvs[1].y * o[1] + uvs[2].y * o[2]) * texmaxv);
+                let c = (v * texw << 2) + (u << 2);
                 let r = texels[c + 0];
                 let g = texels[c + 1];
                 let b = texels[c + 2];
+                // ..and not doing this
                 this.pset(x, y, r, g, b);
             }
         }
@@ -548,6 +622,31 @@ class NativeRasteriser {
             this.buffer[o + 3] = 255;
         }
     }
+    renderm(m) {
+        let c = 0;
+        let light = new __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */](0, 0, -1);
+        for (let f of m.faces) {
+            let r = Math.floor(Math.random() * 255);
+            let g = Math.floor(Math.random() * 255);
+            let b = Math.floor(Math.random() * 255);
+            let scoords = [];
+            let wcoords = [];
+            for (let i = 0; i < 3; i++) {
+                let v = m.vertices[f[i]];
+                // "projection"
+                let x0 = this.width / 2 + (v[0] * this.width / 4);
+                let y0 = this.height / 2 - (v[1] * this.height / 4);
+                scoords.push(new __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */](x0, y0));
+                // eugh
+                wcoords.push(new __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */](v[0], v[1], v[2]));
+            }
+            let normal = (wcoords[2].sub(wcoords[1])).cross(wcoords[1].sub(wcoords[0])).norm();
+            let power = normal.dot(light);
+            if (power > 0)
+                this.tri(scoords, r * power, g * power, b * power);
+            //  break;
+        }
+    }
     render() {
     }
 }
@@ -560,7 +659,7 @@ class NativeRasteriser {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__SharedMemory__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__SharedMemory__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Sym__ = __webpack_require__(0);
 
 
@@ -658,13 +757,71 @@ class WasmRasteriser {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(2);
+
+const X = 0, Y = 1;
+class Vector2 {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+    }
+    add(b) {
+        return new Vector2(b.x + this.x, b.y + this.y);
+    }
+    sub(b) {
+        return new Vector2(this.x - b.x, this.y - b.y);
+    }
+    dot(b) {
+        return (this.x * b.x) + (this.y * b.y);
+    }
+    barycentric(a, b, c) {
+        let va = [c.x - a.x, b.x - a.x, a.x - this.x];
+        let vb = [c.y - a.y, b.y - a.y, a.y - this.y];
+        let bc = [0, 0, 0];
+        __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */].cross(va, vb, bc);
+        if (Math.abs(bc[2]) < 1)
+            return [-1, 1, 1]; //new Vector3(-1,1,1);
+        let iz = 1 / bc[2];
+        return [1.0 - (bc[0] + bc[1]) * iz, bc[1] * iz, bc[0] * iz];
+        //     let v0 = b.sub(a);  // cache
+        //     let v1 = c.sub(a);  // cache
+        //     let v2 = this.sub(a); // RECALC
+        //     let d00 = v0.dot(v0); // cache
+        //     let d01 = v0.dot(v1); // cache
+        //     let d11 = v1.dot(v1); // cache
+        //     let d20 = v2.dot(v0); // RECALC
+        //     let d21 = v2.dot(v1); // RECALC
+        //
+        //     let denom = (d00 * d11 - d01 * d01); // cache
+        //
+        //     let v = (d11 * d20 - d01 * d21) / denom; //a
+        //     let w = (d00 * d21 - d01 * d20) / denom;
+        //     let u = 1.0 - v - w;
+        //
+        //     return new Vector3(u, v, w);
+        // }
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Vector2;
+
+
+
+/***/ }),
+/* 12 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__WasmLoader__ = __webpack_require__(7);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Texture__ = __webpack_require__(6);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__StatsGraph__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__rasteriser_NativeRasteriser__ = __webpack_require__(8);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__rasteriser_WasmRasteriser__ = __webpack_require__(9);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__Device__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__WasmLoader__ = __webpack_require__(6);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Texture__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__StatsGraph__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__ = __webpack_require__(9);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__Device__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__Vector2__ = __webpack_require__(11);
+
+
 
 
 
@@ -674,37 +831,36 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
-let w = new __WEBPACK_IMPORTED_MODULE_0__WasmLoader__["a" /* default */]();
-let s = new __WEBPACK_IMPORTED_MODULE_2__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_2__StatsGraph__["b" /* StatsMode */].MS);
+let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
+let s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS);
+let m = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
+m.boxgeometry(1, 1, 1);
 w.load("./wasm/WasmRasteriser").then((wasm) => {
     // Create a rasteriser
-    let nraster = new __WEBPACK_IMPORTED_MODULE_3__rasteriser_NativeRasteriser__["a" /* default */]();
-    let wraster = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_WasmRasteriser__["a" /* default */](wasm);
-    let device = new __WEBPACK_IMPORTED_MODULE_5__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, nraster);
+    let nraster = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__["a" /* default */]();
+    let wraster = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);
+    let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, nraster);
     device.create();
-    let t = new __WEBPACK_IMPORTED_MODULE_1__Texture__["a" /* default */](wasm, "./img/test-texture.png");
+    let t = new __WEBPACK_IMPORTED_MODULE_2__Texture__["a" /* default */](wasm, "./img/test-texture.png");
     nraster.fill(32, 0, 128);
-    nraster.line(-10, -10, 1000, 1000, 255, 255, 255, true);
-    device.flip();
-    //  let pts:Vector2[] = [
-    //      new Vector2(10, 10),
-    //      new Vector2(450, 10),
-    //      new Vector2(10, 450)
-    //  ];
-    //
-    //  let uvs:Vector2[] = [
-    //    new Vector2(0,0),
-    //    new Vector2(1,0),
-    //    new Vector2(0,1)
-    //  ];
-    //
-    //  // timeout for testing so the .PNG can load
-    //  window.setTimeout(() => {
-    //
-    //    nraster.tritex(pts,uvs,t, 255, 0, 255)
-    //    device.flip();
-    //
-    // }, 200);
+    //nraster.renderm(m);
+    //nraster.line(-10, -10, 1000, 1000, 255, 255, 255, true);
+    //device.flip();
+    let pts = [
+        new __WEBPACK_IMPORTED_MODULE_7__Vector2__["a" /* default */](10, 10),
+        new __WEBPACK_IMPORTED_MODULE_7__Vector2__["a" /* default */](450, 10),
+        new __WEBPACK_IMPORTED_MODULE_7__Vector2__["a" /* default */](10, 450)
+    ];
+    let uvs = [
+        new __WEBPACK_IMPORTED_MODULE_7__Vector2__["a" /* default */](0, 0),
+        new __WEBPACK_IMPORTED_MODULE_7__Vector2__["a" /* default */](1, 0),
+        new __WEBPACK_IMPORTED_MODULE_7__Vector2__["a" /* default */](0, 1)
+    ];
+    // timeout for testing so the .PNG can load
+    window.setTimeout(() => {
+        nraster.tritex(pts, uvs, t, 255, 0, 255);
+        device.flip();
+    }, 200);
     // for (let x=0; x <640; x+=8)
     // {
     //   wraster.vline(x, 0, 479, 255,255,255);
@@ -807,7 +963,7 @@ function runbenchmarks(wasm)
 
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
