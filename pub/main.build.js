@@ -533,6 +533,7 @@ class Mesh {
         this.mtranslation = __WEBPACK_IMPORTED_MODULE_0__Matrix__["a" /* default */].create();
         this.position = [0, 0, 0];
         this.rotation = [0, 0, 0];
+        this.textures = [];
     }
     updatematrix() {
         // Y only
@@ -578,6 +579,21 @@ class Mesh {
             [1, 3, 4],
             [3, 6, 4]
         ];
+        this.uvs = [
+            [[0, 1], [0, 0], [1, 1]],
+            [[0, 0], [1, 0], [1, 1]],
+            [[0, 1], [0, 0], [1, 1]],
+            [[0, 0], [1, 0], [1, 1]],
+            [[0, 1], [0, 0], [1, 1]],
+            [[0, 0], [1, 0], [1, 1]],
+            [[0, 1], [0, 0], [1, 1]],
+            [[0, 0], [1, 0], [1, 1]],
+            [[0, 1], [0, 0], [1, 1]],
+            [[0, 0], [1, 0], [1, 1]],
+            [[0, 1], [0, 0], [1, 1]],
+            [[0, 0], [1, 0], [1, 1]]
+        ];
+        this.uvtextures = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         for (let v of this.vertices) {
             v[0] *= width;
             v[1] *= height;
@@ -729,15 +745,12 @@ class NativeRasteriser {
             );
         }
     }
-    tritex(points, uvs, tex, r, g, b) {
-        // temp for testing
-        if (!tex.ready)
-            return;
+    tritex(points, uvs, tex) {
         // Get a bounding box from three points
-        let minx = Math.min(points[0].x, Math.min(points[1].x, points[2].x));
-        let maxx = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
-        let miny = Math.min(points[0].y, Math.min(points[1].y, points[2].y));
-        let maxy = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
+        let minx = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
+        let maxx = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
+        let miny = Math.min(points[0][1], Math.min(points[1][1], points[2][1]));
+        let maxy = Math.max(points[0][1], Math.max(points[1][1], points[2][1]));
         // clipping
         minx = Math.max(0, minx);
         miny = Math.max(0, miny);
@@ -752,7 +765,12 @@ class NativeRasteriser {
             return;
         if (miny >= this.height)
             return;
-        let P = new __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */]();
+        // Fast float->int convert. Need ints otherwise gaps in the BC test.
+        minx >>= 0;
+        maxx >>= 0;
+        miny >>= 0;
+        maxy >>= 0;
+        let P = [0, 0];
         let o = [0, 0, 0];
         let texels = tex.data.buffer;
         let texmaxu = tex.maxu;
@@ -762,22 +780,26 @@ class NativeRasteriser {
         // Scan a simple bbox
         for (let y = miny; y <= maxy; y++) {
             for (let x = minx; x <= maxx; x++) {
-                // Test each coord
-                P.x = x;
-                P.y = y;
                 // barycentric is _all_ about Barry
                 // Can be massively optimised by unrolling this call
-                o = P.barycentric(points[0], points[1], points[2]);
+                __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */].barycentric([x, y], points[0], points[1], points[2], o);
                 // Check [0] first
                 if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
-                let u = Math.round((uvs[0].x * o[0] + uvs[1].x * o[1] + uvs[2].x * o[2]) * texmaxu);
-                let v = Math.round((uvs[0].y * o[0] + uvs[1].y * o[1] + uvs[2].y * o[2]) * texmaxv);
+                let z = points[0][2] * o[0] +
+                    points[1][2] * o[1] +
+                    points[2][2] * o[2];
+                let zo = y * this.width + x;
+                // Is it closer than an existing pixel? Draw it
+                // if (this.zbuffer[zo] > z) return;
+                //
+                // this.zbuffer[zo] = z;
+                let u = Math.round((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2]) * texmaxu);
+                let v = Math.round((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2]) * texmaxv);
                 let c = (v * texw << __WEBPACK_IMPORTED_MODULE_3__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_3__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]);
                 let r = texels[c + 0];
                 let g = texels[c + 1];
                 let b = texels[c + 2];
-                // ..and not doing this
                 this.pset(x, y, r, g, b);
             }
         }
@@ -812,7 +834,7 @@ class NativeRasteriser {
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].create(),
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].create()
         ];
-        // Triangle word coordinates for lighting, culling
+        // Triangle world coordinates for lighting, culling
         let triworld = [
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].create(),
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].create(),
@@ -820,7 +842,8 @@ class NativeRasteriser {
         ];
         let vertex;
         // For each face (triangle) of the mesh model
-        for (let f of m.faces) {
+        for (let fi = 0; fi < m.faces.length; fi++) {
+            let f = m.faces[fi];
             // For each vertex of the face
             for (let v = 0; v < 3; v++) {
                 vertex = m.vertices[f[v]];
@@ -839,9 +862,34 @@ class NativeRasteriser {
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].cross(v1, v2, fnormal);
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].norm(fnormal, fnormal);
             let power = __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].dot(fnormal, light);
-            // power = 1;
+            //  console.log(power);
+            // not visible
+            let visible = (power > 0);
             if (power > 0)
-                this.tri(triscreen, (255 * power) >> 0, (255 * power) >> 0, (255 * power) >> 0, !true);
+                if (visible) {
+                    let drawflat = true;
+                    if (m.textures.length > 0) {
+                        let whichtex = m.uvtextures[fi];
+                        if (m.textures[whichtex].ready) {
+                            let uvs = m.uvs[fi];
+                            // this.tri(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, true);
+                            this.tritex(triscreen, uvs, m.textures[whichtex]);
+                            drawflat = false;
+                            // return;
+                        }
+                    }
+                    if (drawflat)
+                        this.tri(triscreen, (255 * power) >> 0, (255 * power) >> 0, (255 * power) >> 0, true);
+                }
+            // if (m.textures.length > 0)
+            // {
+            //   if (m.textures[m.uvtextures[fi]].ready)
+            //   {
+            //     return;
+            //   }
+            //
+            // }
+            // no texture, flat shade it
         }
     }
 }
@@ -1058,6 +1106,8 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, nraster);
     device.create();
     let t = new __WEBPACK_IMPORTED_MODULE_2__Texture__["a" /* default */](wasm, "./img/test-texture.png");
+    m.textures.push(t);
+    m2.textures.push(t);
     nraster.fill(32, 0, 128);
     nraster.rasterise(m, mtransform);
     device.flip();

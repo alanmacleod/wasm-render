@@ -57,6 +57,9 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 
   let t = new Texture(wasm, "./img/test-texture.png");
 
+  m.textures.push(t);
+  m2.textures.push(t);
+
   nraster.fill(32,0,128);
   nraster.rasterise(m, mtransform);
   device.flip();

@@ -6,8 +6,8 @@
 </head>
 <body>
   <script src="./main.build.js"></script>
-  <!--
-  <textarea id="ta"></textarea>
+
+  <!-- <textarea id="ta"></textarea>
 
   <script src="./three.min.js"></script>
   <script>
@@ -30,6 +30,25 @@
 
   }
 
-  </script> -->
+  ta.innerHTML +="\n\n";
+
+  for (var t=0; t<box.faceVertexUvs[0].length; t++)
+  {
+    ta.innerHTML += "["
+    for (let fv=0; fv<box.faceVertexUvs[0][t].length; fv++)
+    {
+    let uva = box.faceVertexUvs[0][t][fv];
+    ta.innerHTML += "["+uva.x+","+uva.y+"]";
+    if (fv < box.faceVertexUvs[0][t].length-1) ta.innerHTML +=','
+    }
+    ta.innerHTML +="],\n";
+    // ta.innerHTML += "["+uva.x+","+uva.y+"]\n";
+    // console.log(uva);
+//console.log(box.faceVertexUvs[0][0][0].y);
+  } -->
+
+
+
+  </script>
 </body>
 </html>

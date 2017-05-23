@@ -188,16 +188,13 @@ export default class NativeRasteriser implements IRasteriser
 
   }
 
-  public tritex(points:Vector2[], uvs:Vector2[],tex: Texture, r:number, g:number, b:number): void
+  public tritex(points:number[][], uvs:number[][], tex: Texture): void
   {
-    // temp for testing
-    if (!tex.ready) return;
-
     // Get a bounding box from three points
-    let minx:number = Math.min(points[0].x, Math.min(points[1].x, points[2].x));
-    let maxx:number = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
-    let miny:number = Math.min(points[0].y, Math.min(points[1].y, points[2].y));
-    let maxy:number = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
+    let minx:number = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
+    let maxx:number = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
+    let miny:number = Math.min(points[0][1], Math.min(points[1][1], points[2][1]));
+    let maxy:number = Math.max(points[0][1], Math.max(points[1][1], points[2][1]));
 
     // clipping
     minx = Math.max(0, minx);
@@ -211,8 +208,12 @@ export default class NativeRasteriser implements IRasteriser
     if (minx >= this.width) return;
     if (miny >= this.height) return;
 
-    let P = new Vector2();
-    let o = [0,0,0];
+    // Fast float->int convert. Need ints otherwise gaps in the BC test.
+    minx >>= 0; maxx >>= 0;
+    miny >>= 0; maxy >>= 0;
+
+    let P = [0, 0];
+    let o = [0, 0, 0];
 
     let texels = tex.data.buffer;
     let texmaxu= tex.maxu;
@@ -225,28 +226,32 @@ export default class NativeRasteriser implements IRasteriser
     {
       for ( let x=minx; x<=maxx; x++ )
       {
-        // Test each coord
-        P.x = x;
-        P.y = y;
-
         // barycentric is _all_ about Barry
         // Can be massively optimised by unrolling this call
-        o = P.barycentric( points[0], points[1], points[2] );
+        Vector2.barycentric([x,y], points[0], points[1], points[2], o);
 
         // Check [0] first
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
-        let u = Math.round((uvs[0].x * o[0] + uvs[1].x * o[1] + uvs[2].x * o[2] ) * texmaxu);
-        let v = Math.round((uvs[0].y * o[0] + uvs[1].y * o[1] + uvs[2].y * o[2] ) * texmaxv);
+        let z = points[0][2] * o[0] +
+                points[1][2] * o[1] +
+                points[2][2] * o[2];
+        let zo = y * this.width + x;
+
+        // Is it closer than an existing pixel? Draw it
+        // if (this.zbuffer[zo] > z) return;
+        //
+        // this.zbuffer[zo] = z;
+
+        let u = Math.round((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2] ) * texmaxu);
+        let v = Math.round((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2] ) * texmaxv);
 
         let c = (v * texw << BIT_SHIFT_PER_PIXEL) + (u << BIT_SHIFT_PER_PIXEL);
         let r = texels[ c+0 ];
         let g = texels[ c+1 ];
         let b = texels[ c+2 ];
 
-        // ..and not doing this
         this.pset( x, y, r, g, b );
-
       }
     }
 
@@ -292,7 +297,7 @@ export default class NativeRasteriser implements IRasteriser
       Vector3.create()
     ];
 
-    // Triangle word coordinates for lighting, culling
+    // Triangle world coordinates for lighting, culling
     let triworld = [
       Vector3.create(),
       Vector3.create(),
@@ -302,8 +307,9 @@ export default class NativeRasteriser implements IRasteriser
     let vertex;
 
     // For each face (triangle) of the mesh model
-    for (let f of m.faces)
+    for (let fi=0; fi<m.faces.length; fi++)
     {
+      let f = m.faces[fi];
       // For each vertex of the face
       for (let v=0; v<3; v++)
       {
@@ -329,9 +335,45 @@ export default class NativeRasteriser implements IRasteriser
 
       let power = Vector3.dot(fnormal, light);
 
-      // power = 1;
+    //  console.log(power);
+      // not visible
+      let visible = (power > 0);
+
       if (power > 0)
-        this.tri(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, !true);
+
+      if (visible)
+      {
+        let drawflat = true;
+
+        if (m.textures.length > 0)
+        {
+          let whichtex = m.uvtextures[fi];
+          if (m.textures[whichtex].ready)
+          {
+            let uvs = m.uvs[fi];
+            // this.tri(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, true);
+            this.tritex(triscreen, uvs, m.textures[whichtex]);
+            drawflat = false;
+            // return;
+          }
+        }
+
+        if (drawflat)
+          this.tri(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, true);
+      }
+
+      // if (m.textures.length > 0)
+      // {
+      //   if (m.textures[m.uvtextures[fi]].ready)
+      //   {
+      //     return;
+      //   }
+      //
+      // }
+
+      // no texture, flat shade it
+
+
     }
   }
 

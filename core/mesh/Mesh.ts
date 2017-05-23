@@ -1,11 +1,16 @@
 
-import Matrix from  '../Matrix';
+import Matrix   from  '../Matrix';
+import Texture  from  '../Texture';
 
 export default class Mesh
 {
   public vertices:number[][];
   public faces:number[][];
   public uvs:number[][][];
+
+  public textures:Texture[];
+  public uvtextures:number[];
+  public istextured:boolean;
 
   public matrix:number[][];
 
@@ -23,7 +28,10 @@ export default class Mesh
 
     this.position = [0,0,0];
     this.rotation = [0,0,0];
+
+    this.textures = [];
   }
+
 
   public updatematrix():void
   {
@@ -46,7 +54,6 @@ export default class Mesh
     this.rotation = rotation;
     this.updatematrix();
   }
-
 
   //public loadobj(url):void {}
 
@@ -80,6 +87,24 @@ export default class Mesh
       [1,3,4], // 'rear'
       [3,6,4]
     ];
+
+
+    this.uvs = [
+      [[0,1],[0,0],[1,1]], // each face, three elements one for each vertex
+      [[0,0],[1,0],[1,1]],
+      [[0,1],[0,0],[1,1]],
+      [[0,0],[1,0],[1,1]],
+      [[0,1],[0,0],[1,1]],
+      [[0,0],[1,0],[1,1]],
+      [[0,1],[0,0],[1,1]],
+      [[0,0],[1,0],[1,1]],
+      [[0,1],[0,0],[1,1]],
+      [[0,0],[1,0],[1,1]],
+      [[0,1],[0,0],[1,1]],
+      [[0,0],[1,0],[1,1]]
+    ];
+
+    this.uvtextures = [ 0,0,0,0,0,0,0,0,0,0,0,0 ];
 
     for (let v of this.vertices)
     {
