@@ -9,16 +9,34 @@ import {WasmInstance}                 from './main.ext';
 import Device                         from './Device';
 import Vector2                        from './Vector2';
 import Vector3                        from './Vector3';
+import Matrix                         from './Matrix';
 
 const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 
 let w = new WasmLoader();
-let s = new StatsGraph(StatsMode.MS);
+let s = new StatsGraph(StatsMode.MS); // Performance monitoring
 
 let m = new Mesh();
 m.boxgeometry(1,1,1);
+
+let mprojection = Matrix.create(); // Camera -> Screen
+let mcamera     = Matrix.create(); // Duh
+let mrotatey    = Matrix.create(); // Object space rotation
+let mtranslate  = Matrix.create(); // Object position in world
+let mtransform  = Matrix.create(); // Concatenated transformation
+
+Matrix.perspective(45, SCR_WIDTH/SCR_HEIGHT, 0.01, 1.0, mprojection);
+Matrix.lookat([0,0,5], [0,0,0], [0,1,0], mcamera);
+
+Matrix.rotationy(10, mrotatey);
+Matrix.translate(0,0,0, mtranslate);
+
+Matrix.concat([
+    mrotatey, mtranslate, mcamera, mprojection
+], mtransform);
+
 
 w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 {
@@ -32,33 +50,31 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   let t = new Texture(wasm, "./img/test-texture.png");
 
   nraster.fill(32,0,128);
-  //nraster.renderm(m);
+  nraster.rasterise(m, mtransform);
+  device.flip();
 
   //nraster.line(-10, -10, 1000, 1000, 255, 255, 255, true);
 
 
-
-  //device.flip();
-
-  let pts:Vector2[] = [
-      new Vector2(10, 10),
-      new Vector2(450, 10),
-      new Vector2(10, 450)
-  ];
-
-  let uvs:Vector2[] = [
-    new Vector2(0,0),
-    new Vector2(1,0),
-    new Vector2(0,1)
-  ];
-
-  // timeout for testing so the .PNG can load
-  window.setTimeout(() => {
-
-    nraster.tritex(pts,uvs,t, 255, 0, 255)
-    device.flip();
-
- }, 200);
+ //  let pts:Vector2[] = [
+ //      new Vector2(10, 10),
+ //      new Vector2(450, 10),
+ //      new Vector2(10, 450)
+ //  ];
+ //
+ //  let uvs:Vector2[] = [
+ //    new Vector2(0,0),
+ //    new Vector2(1,0),
+ //    new Vector2(0,1)
+ //  ];
+ //
+ //  // timeout for testing so the .PNG can load
+ //  window.setTimeout(() => {
+ //
+ //    nraster.tritex(pts,uvs,t, 255, 0, 255)
+ //    device.flip();
+ //
+ // }, 200);
 
   // for (let x=0; x <640; x+=8)
   // {

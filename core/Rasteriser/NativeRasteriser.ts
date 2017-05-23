@@ -9,18 +9,22 @@ import Vector2                from '../Vector2';
 import Vector3                from '../Vector3';
 import {BYTES_PER_PIXEL, BIT_SHIFT_PER_PIXEL,
         ALPHA_MAGIC_NUMBER}   from '../Sym';
+import Matrix                 from '../Matrix';
+
 
 export default class NativeRasteriser implements IRasteriser
 {
   private width:number;
   private height:number;
   private pagesize:number;
-  // private numpixels:number;
+  private hwidth: number;
+  private hheight: number;
 
+  // IRasteriser members
   // TODO: Perhaps use Uint32 bytepack view for cleaner/faster/easier writes?
   // Real TypedArray to emulate wasm heap
-  buffer: Uint8ClampedArray;
-  ready: boolean;
+  public buffer: Uint8ClampedArray;
+  public ready: boolean;
 
   constructor()
   {
@@ -29,13 +33,15 @@ export default class NativeRasteriser implements IRasteriser
 
   public init(w: number, h: number): void
   {
-    this.width = w;
-    this.height = h;
+    this.width = w; this.hwidth = (w/2)>>0;
+    this.height = h; this.hheight = (h/2)>>0;
     this.pagesize = w * h * BYTES_PER_PIXEL;
     this.buffer = new Uint8ClampedArray( this.pagesize );
     this.ready = true;
   }
 
+  // Standard Bres' line routine, I've been copying, pasting and translating
+  // this code of mine for about 10 years. It's seen around six languages.
   public line(x0, y0, x1, y1, r, g, b, clip?:boolean)
   {
     if (clip)
@@ -88,57 +94,76 @@ export default class NativeRasteriser implements IRasteriser
   // Heard about this method recently, I always used the top/bottom half tri
   // approach which I'm told is a little old school. I believe GPUs do it this
   // way because it's easier to exec in parallel...
-  public tri(points:Vector2[], r:number, g:number, b:number): void
+  public tri(points:number[][], r:number, g:number, b:number, wireframe?:boolean): void
   {
-    // Get a bounding box from three points
-    let minx:number = Math.min(points[0].x, Math.min(points[1].x, points[2].x));
-    let maxx:number = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
-    let miny:number = Math.min(points[0].y, Math.min(points[1].y, points[2].y));
-    let maxy:number = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
-
-    // clipping
-    minx = Math.max(0, minx);
-    miny = Math.max(0, miny);
-    maxx = Math.min(this.width-1, maxx);
-    maxy = Math.min(this.height-1, maxy);
-
-    // off-screen test
-    if (maxx < 0) return;
-    if (maxy < 0) return;
-    if (minx >= this.width) return;
-    if (miny >= this.height) return;
-
-    // minx = 0; miny=0; maxx=this.width-1; maxy=this.height-1;
-
-    let P = new Vector2();
-    //let o = new Vector3();
-    let o = [0,0,0];
-
-    // Scan a simple bbox
-    for ( let y=miny; y<=maxy; y++ )
+    if (wireframe)
     {
-      for (let x=minx; x<=maxx; x++ )
-      {
-        // Test each coord
-        P.x = x;
-        P.y = y;
+      this.wireframe(points);
+      return;
+    }
+    // // Get a bounding box from three points
+    // let minx:number = Math.min(points[0].x, Math.min(points[1].x, points[2].x));
+    // let maxx:number = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
+    // let miny:number = Math.min(points[0].y, Math.min(points[1].y, points[2].y));
+    // let maxy:number = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
+    //
+    // // clipping
+    // minx = Math.max(0, minx);
+    // miny = Math.max(0, miny);
+    // maxx = Math.min(this.width-1, maxx);
+    // maxy = Math.min(this.height-1, maxy);
+    //
+    // // off-screen test
+    // if (maxx < 0) return;
+    // if (maxy < 0) return;
+    // if (minx >= this.width) return;
+    // if (miny >= this.height) return;
+    //
+    // let P = new Vector2();
+    // let o = [0,0,0];
+    //
+    // // Scan a simple bbox
+    // for ( let y=miny; y<=maxy; y++ )
+    // {
+    //   for (let x=minx; x<=maxx; x++ )
+    //   {
+    //     // Test each coord
+    //     P.x = x;
+    //     P.y = y;
+    //
+    //     // Can be massively optimised by unrolling this call
+    //     o = P.barycentric(points[0], points[1], points[2]);
+    //
+    //     // o = weighted ratio of each corner
+    //     // points[0] = o.x
+    //     // points[1] = o.y
+    //     // points[2] = o.z
+    //
+    //     if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
+    //
+    //     // Mul o by coords to get u,v
+    //
+    //     // This coord is in the triangle, draw it
+    //     this.pset( x, y, r, g, b );
+    //
+    //   }
+    // }
 
-        // Can be massively optimised by unrolling this call
-        o = P.barycentric(points[0], points[1], points[2]);
+  }
 
-        // o = weighted ratio of each corner
-        // points[0] = o.x
-        // points[1] = o.y
-        // points[2] = o.z
-
-        if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
-
-        // Mul o by coords to get u,v
-
-        // This coord is in the triangle, draw it
-        this.pset( x, y, r, g, b );
-
-      }
+  // Draws a triangle in wireframe mode
+  public wireframe(points:number[][])
+  {
+    for (let t=0; t<3; t++)
+    {
+      let a = points[t]
+      let b = points[(t+1)%3];
+      this.line(
+        a[0], a[1],     // point A
+        b[0], b[1],     // point B
+        255, 255, 255,  // Colour
+        true            // Clipping?
+      );
     }
 
   }
@@ -175,7 +200,6 @@ export default class NativeRasteriser implements IRasteriser
     let texw = tex.width;
     let texh = tex.height;
 
-
     // Scan a simple bbox
     for ( let y=miny; y<=maxy; y++ )
     {
@@ -189,6 +213,7 @@ export default class NativeRasteriser implements IRasteriser
         // Can be massively optimised by unrolling this call
         o = P.barycentric( points[0], points[1], points[2] );
 
+        // Check [0] first
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
         let u = Math.round((uvs[0].x * o[0] + uvs[1].x * o[1] + uvs[2].x * o[2] ) * texmaxu);
@@ -207,11 +232,9 @@ export default class NativeRasteriser implements IRasteriser
 
   }
 
-
-
   public pset(x: number, y: number, r: number, g: number, b: number): void
   {
-    let o:number = y * this.width * BYTES_PER_PIXEL + x * BYTES_PER_PIXEL;
+    let o:number = (y>>0) * this.width * BYTES_PER_PIXEL + (x>>0) * BYTES_PER_PIXEL;
 
     this.buffer[ o + 0 ] = r;
     this.buffer[ o + 1 ] = g;
@@ -219,21 +242,6 @@ export default class NativeRasteriser implements IRasteriser
     this.buffer[ o + 3 ] = 255;
   }
 
-  public vline(x:number, y1:number, y2:number, r:number, g:number, b:number): void
-  {
-    let hwidth = this.width * BYTES_PER_PIXEL;
-    let xo = x * BYTES_PER_PIXEL;
-
-    for (let y:number=y1; y<=y2; y++)
-    {
-      let o = y * hwidth + xo;
-
-      this.buffer[ o + 0 ] = r;
-      this.buffer[ o + 1 ] = g;
-      this.buffer[ o + 2 ] = b;
-      this.buffer[ o + 3 ] = 255;
-    }
-  }
 
   public fill(r:number, g:number, b:number): void
   {
@@ -246,43 +254,63 @@ export default class NativeRasteriser implements IRasteriser
     }
   }
 
-  renderm(m: Mesh)
+  rasterise(m: Mesh, mat:number[][])
   {
-    let c = 0;
-    let light = new Vector3(0,0,-1);
+    // Directional light
+    let light = [0, 0, -1];
+
+    // Initialise these outside the loop for normal/lighting calcs
+    let v1 = Vector3.create();
+    let v2 = Vector3.create();
+    let fnormal = Vector3.create();
+
+    // Rasterisation screen coordinates buffer
+    let triscreen = [
+      Vector3.create(),
+      Vector3.create(),
+      Vector3.create()
+    ];
+
+    // Triangle word coordinates for lighting, culling
+    let triworld = [
+      Vector3.create(),
+      Vector3.create(),
+      Vector3.create()
+    ];
+
+    let vertex;
+
+    // For each face (triangle) of the mesh model
     for (let f of m.faces)
     {
-      let r = Math.floor(Math.random() * 255);
-      let g = Math.floor(Math.random() * 255);
-      let b = Math.floor(Math.random() * 255);
-
-      let scoords = [];
-      let wcoords = [];
-
-      for (let i=0; i<3; i++)
+      // For each vertex of the face
+      for (let v=0; v<3; v++)
       {
-        let v = m.vertices[f[i]];
+        vertex = m.vertices[f[v]];
 
-        // "projection"
-        let x0 = this.width / 2 + (v[0] * this.width / 4);
-        let y0 = this.height / 2 - (v[1] * this.height / 4 );
+        // Tranform this vertex
+        Matrix.transform(vertex, mat, triscreen[v]);
 
-        scoords.push(new Vector2(x0, y0));
+        // Scale it onto display space
+        triscreen[v][0] =  triscreen[v][0] * this.width + this.hwidth;
+        triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
 
-        // eugh
-        wcoords.push(new Vector3(v[0], v[1], v[2]));
+        triworld[v] = vertex;
       }
-      let normal = (wcoords[2].sub(wcoords[1])).cross(wcoords[1].sub(wcoords[0])).norm();
-      let power = normal.dot(light);
+
+      // Need to transform normals!
+      Vector3.sub(triworld[2], triworld[1], v1);
+      Vector3.sub(triworld[1], triworld[0], v2);
+      Vector3.cross(v1, v2, fnormal);
+      Vector3.norm(fnormal, fnormal);
+
+      let power = Vector3.dot(fnormal, light);
 
       if (power > 0)
-        this.tri(scoords, r*power, g*power, b*power);
-    //  break;
+      {
+        this.tri(triscreen, 255,255,255,true);
+      }
     }
   }
-  render()
-  {
 
-
-  }
 }

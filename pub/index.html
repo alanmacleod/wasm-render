@@ -6,5 +6,30 @@
 </head>
 <body>
   <script src="./main.build.js"></script>
+  <!--
+  <textarea id="ta"></textarea>
+
+  <script src="./three.min.js"></script>
+  <script>
+  var box = new THREE.CubeGeometry(1,1,1);
+
+  let ta = document.getElementById("ta");
+  for (var t=0; t<box.vertices.length;t++)
+  {
+    let v = box.vertices[t];
+    console.log(v.x, v.y, v.z)
+    ta.innerHTML += "["+v.x+","+v.y+","+v.z+"],\n";
+  }
+
+  ta.innerHTML +="\n\n";
+
+  for (var t=0; t<box.faces.length; t++)
+  {
+    let f = box.faces[t];
+    ta.innerHTML += "["+f.a+","+f.b+","+f.c+"],\n";
+
+  }
+
+  </script> -->
 </body>
 </html>

@@ -1,5 +1,7 @@
 
-// crusty old JS line routine I had lying around, cba to port to TS properly
+
+// Crusty old JS line routine I had lying around, cba to port to TS properly
+// Therein lies a strength/weakness with TS ... I don't have to.
 
 export default class Clip
 {

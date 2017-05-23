@@ -2,6 +2,7 @@
 import IRasteriser          from './IRasteriser';
 import SharedMemory         from '../SharedMemory'
 import {WasmInstance}       from '../main.ext';
+import Mesh                 from '../mesh/Mesh';
 import {BYTES_PER_PIXEL,
         ALPHA_MAGIC_NUMBER}  from '../Sym';
 
@@ -65,7 +66,7 @@ export default class WasmRasteriser implements IRasteriser
     this.wasm._fill(this.rgbpack(r,g,b));
   }
 
-  render()
+  rasterise(m: Mesh, mat:number[][])
   {
 
   }
