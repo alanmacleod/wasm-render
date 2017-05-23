@@ -7,7 +7,6 @@ import NativeRasteriser               from './rasteriser/NativeRasteriser';
 import WasmRasteriser                 from './rasteriser/WasmRasteriser';
 import {WasmInstance}                 from './main.ext';
 import Device                         from './Device';
-import Vector2                        from './Vector2';
 import Vector3                        from './Vector3';
 import Matrix                         from './Matrix';
 
@@ -33,8 +32,10 @@ Matrix.lookat([0,0,5], [0,0,0], [0,1,0], mcamera);
 Matrix.rotationy(10, mrotatey);
 Matrix.translate(0,0,0, mtranslate);
 
+Matrix.concat([mrotatey, mtranslate], m.matrix);
+
 Matrix.concat([
-    mrotatey, mtranslate, mcamera, mprojection
+    mcamera, mprojection
 ], mtransform);
 
 
@@ -170,7 +171,6 @@ function runbenchmarks(wasm)
   }
 
   let realtotal_read = performance.now() - tstart;
-
 
   console.log(`For ${iterations} WRITE iterations to ${bsize} bytes in WASM View took ${wasmtotal_write} ms`);
   console.log(`For ${iterations} WRITE iterations to ${bsize} bytes in REAL View took ${realtotal_write} ms`);

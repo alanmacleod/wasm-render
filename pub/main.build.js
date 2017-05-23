@@ -88,94 +88,7 @@ const ALPHA_MAGIC_NUMBER = 4278190080;
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-// Vector3.ts
-//        offers static overloads operating on simple arrays for speed
-// Passing the `out` by reference instead of creating & returning `out`
-// is literally twice the speed (Chrome 58). As it always was in the C dayssss
-// So, doing it like this with using TypeScript's static and overload options.
-// Garbage collector takin' it easy too.
-class Vector3 {
-    constructor(x = 0, y = 0, z = 0) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-    // Static Methods ///////////////////////////////////////////////////////////
-    static create(a, b, c) {
-        return [a || 0, b || 0, c || 0];
-    }
-    static add(a, b, out) {
-        out[0] = a[0] + b[0];
-        out[1] = a[1] + b[1];
-        out[2] = a[2] + b[2];
-    }
-    static sub(a, b, out) {
-        out[0] = a[0] - b[0];
-        out[1] = a[1] - b[1];
-        out[2] = a[2] - b[2];
-    }
-    static mul(a, s, out) {
-        out[0] = a[0] * s;
-        out[1] = a[1] * s;
-        out[2] = a[2] * s;
-    }
-    static div(a, d, out) {
-        let id = 1 / d;
-        out[0] = a[0] * id;
-        out[1] = a[1] * id;
-        out[2] = a[2] * id;
-    }
-    static norm(v, out) {
-        let m = Vector3.mag(v);
-        if (m == 0)
-            out = [];
-        else
-            [out[0], out[1], out[2]] = [v[0] / m, v[1] / m, v[2] / m];
-    }
-    static mag(v) {
-        return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-    }
-    static dot(a, b) {
-        return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
-    }
-    static cross(a, b, out) {
-        out[0] = a[1] * b[2] - a[2] * b[1];
-        out[1] = a[2] * b[0] - a[0] * b[2];
-        out[2] = a[0] * b[1] - a[1] * b[0];
-    }
-    // Instance Methods /////////////////////////////////////////////////////////
-    add(b) {
-        return new Vector3(this.x + b.x, this.y + b.y, this.z + b.z);
-    }
-    sub(b) {
-        return new Vector3(this.x - b.x, this.y - b.y, this.z - b.z);
-    }
-    norm() {
-        let m = this.mag();
-        if (m == 0)
-            return new Vector3();
-        return new Vector3(this.x / m, this.y / m, this.z / m);
-    }
-    mag() {
-        return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
-    }
-    dot(b) {
-        return (this.x * b.x) + (this.y * b.y) + (this.z * b.z);
-    }
-    cross(b) {
-        return new Vector3(this.y * b.z - this.z * b.y, this.z * b.x - this.x * b.z, this.x * b.y - this.y * b.x);
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Vector3;
-
-
-
-/***/ }),
-/* 2 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(2);
 
 // Method class for 4D Matrix manipulation. Static for speed (2x! - tested)
 // Column-major order, right-hand system. Matches OpenGL et al.
@@ -293,6 +206,93 @@ class Matrix {
     }
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = Matrix;
+
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+// Vector3.ts
+//        offers static overloads operating on simple arrays for speed
+// Passing the `out` by reference instead of creating & returning `out`
+// is literally twice the speed (Chrome 58). As it always was in the C dayssss
+// So, doing it like this with using TypeScript's static and overload options.
+// Garbage collector takin' it easy too.
+class Vector3 {
+    constructor(x = 0, y = 0, z = 0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    // Static Methods ///////////////////////////////////////////////////////////
+    static create(a, b, c) {
+        return [a || 0, b || 0, c || 0];
+    }
+    static add(a, b, out) {
+        out[0] = a[0] + b[0];
+        out[1] = a[1] + b[1];
+        out[2] = a[2] + b[2];
+    }
+    static sub(a, b, out) {
+        out[0] = a[0] - b[0];
+        out[1] = a[1] - b[1];
+        out[2] = a[2] - b[2];
+    }
+    static mul(a, s, out) {
+        out[0] = a[0] * s;
+        out[1] = a[1] * s;
+        out[2] = a[2] * s;
+    }
+    static div(a, d, out) {
+        let id = 1 / d;
+        out[0] = a[0] * id;
+        out[1] = a[1] * id;
+        out[2] = a[2] * id;
+    }
+    static norm(v, out) {
+        let m = Vector3.mag(v);
+        if (m == 0)
+            out = [];
+        else
+            [out[0], out[1], out[2]] = [v[0] / m, v[1] / m, v[2] / m];
+    }
+    static mag(v) {
+        return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    }
+    static dot(a, b) {
+        return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
+    }
+    static cross(a, b, out) {
+        out[0] = a[1] * b[2] - a[2] * b[1];
+        out[1] = a[2] * b[0] - a[0] * b[2];
+        out[2] = a[0] * b[1] - a[1] * b[0];
+    }
+    // Instance Methods /////////////////////////////////////////////////////////
+    add(b) {
+        return new Vector3(this.x + b.x, this.y + b.y, this.z + b.z);
+    }
+    sub(b) {
+        return new Vector3(this.x - b.x, this.y - b.y, this.z - b.z);
+    }
+    norm() {
+        let m = this.mag();
+        if (m == 0)
+            return new Vector3();
+        return new Vector3(this.x / m, this.y / m, this.z / m);
+    }
+    mag() {
+        return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+    }
+    dot(b) {
+        return (this.x * b.x) + (this.y * b.y) + (this.z * b.z);
+    }
+    cross(b) {
+        return new Vector3(this.y * b.z - this.z * b.y, this.z * b.x - this.x * b.z, this.x * b.y - this.y * b.x);
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Vector3;
 
 
 
@@ -523,8 +523,12 @@ class WasmLoader {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Matrix__ = __webpack_require__(1);
+
 class Mesh {
-    constructor() { }
+    constructor() {
+        this.matrix = __WEBPACK_IMPORTED_MODULE_0__Matrix__["a" /* default */].create();
+    }
     //public loadobj(url):void {}
     boxgeometry(width, height, depth) {
         // Test object.
@@ -572,9 +576,9 @@ class Mesh {
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Clip__ = __webpack_require__(14);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Vector2__ = __webpack_require__(12);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Vector3__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Vector3__ = __webpack_require__(2);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__Sym__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__Matrix__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__Matrix__ = __webpack_require__(1);
 // "Native" probably a bit misleading. More of a "Reference" rasteriser
 
 
@@ -641,53 +645,45 @@ class NativeRasteriser {
             this.wireframe(points);
             return;
         }
-        // // Get a bounding box from three points
-        // let minx:number = Math.min(points[0].x, Math.min(points[1].x, points[2].x));
-        // let maxx:number = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
-        // let miny:number = Math.min(points[0].y, Math.min(points[1].y, points[2].y));
-        // let maxy:number = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
-        //
-        // // clipping
-        // minx = Math.max(0, minx);
-        // miny = Math.max(0, miny);
-        // maxx = Math.min(this.width-1, maxx);
-        // maxy = Math.min(this.height-1, maxy);
-        //
-        // // off-screen test
-        // if (maxx < 0) return;
-        // if (maxy < 0) return;
-        // if (minx >= this.width) return;
-        // if (miny >= this.height) return;
-        //
-        // let P = new Vector2();
-        // let o = [0,0,0];
-        //
-        // // Scan a simple bbox
-        // for ( let y=miny; y<=maxy; y++ )
-        // {
-        //   for (let x=minx; x<=maxx; x++ )
-        //   {
-        //     // Test each coord
-        //     P.x = x;
-        //     P.y = y;
-        //
-        //     // Can be massively optimised by unrolling this call
-        //     o = P.barycentric(points[0], points[1], points[2]);
-        //
-        //     // o = weighted ratio of each corner
-        //     // points[0] = o.x
-        //     // points[1] = o.y
-        //     // points[2] = o.z
-        //
-        //     if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
-        //
-        //     // Mul o by coords to get u,v
-        //
-        //     // This coord is in the triangle, draw it
-        //     this.pset( x, y, r, g, b );
-        //
-        //   }
-        // }
+        // Get a bounding box from three points
+        let minx = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
+        let maxx = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
+        let miny = Math.min(points[0][1], Math.min(points[1][1], points[2][1]));
+        let maxy = Math.max(points[0][1], Math.max(points[1][1], points[2][1]));
+        // clipping
+        minx = Math.max(0, minx);
+        miny = Math.max(0, miny);
+        maxx = Math.min(this.width - 1, maxx);
+        maxy = Math.min(this.height - 1, maxy);
+        // off-screen test
+        if (maxx < 0)
+            return;
+        if (maxy < 0)
+            return;
+        if (minx >= this.width)
+            return;
+        if (miny >= this.height)
+            return;
+        let P = [0, 0]; //new Vector2();
+        let o = [0, 0, 0];
+        // Scan a simple bbox
+        for (let y = miny; y <= maxy; y++) {
+            for (let x = minx; x <= maxx; x++) {
+                P[0] = x;
+                P[1] = y;
+                // Can be massively optimised by unrolling this call
+                __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */].barycentric(P, points[0], points[1], points[2], o);
+                // o = weighted ratio of each corner
+                // points[0] = o.x
+                // points[1] = o.y
+                // points[2] = o.z
+                if (o[0] < 0 || o[1] < 0 || o[2] < 0)
+                    continue;
+                // Mul o by coords to get u,v
+                // This coord is in the triangle, draw it
+                this.pset(x, y, r, g, b);
+            }
+        }
     }
     // Draws a triangle in wireframe mode
     wireframe(points) {
@@ -794,21 +790,22 @@ class NativeRasteriser {
             // For each vertex of the face
             for (let v = 0; v < 3; v++) {
                 vertex = m.vertices[f[v]];
-                // Tranform this vertex
-                __WEBPACK_IMPORTED_MODULE_4__Matrix__["a" /* default */].transform(vertex, mat, triscreen[v]);
+                // Vertex shader
+                // Object.matrix -> world space
+                __WEBPACK_IMPORTED_MODULE_4__Matrix__["a" /* default */].transform(vertex, m.matrix, triworld[v]);
+                // View & Projection matrix -> screen
+                __WEBPACK_IMPORTED_MODULE_4__Matrix__["a" /* default */].transform(triworld[v], mat, triscreen[v]);
                 // Scale it onto display space
                 triscreen[v][0] = triscreen[v][0] * this.width + this.hwidth;
                 triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
-                triworld[v] = vertex;
             }
-            // Need to transform normals!
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].sub(triworld[2], triworld[1], v1);
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].sub(triworld[1], triworld[0], v2);
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].cross(v1, v2, fnormal);
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].norm(fnormal, fnormal);
             let power = __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].dot(fnormal, light);
             if (power > 0) {
-                this.tri(triscreen, 255, 255, 255, true);
+                this.tri(triscreen, 255 * power, 255 * power, 255 * power, !true);
             }
         }
     }
@@ -920,7 +917,7 @@ class WasmRasteriser {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(2);
 
 // Not convinced I need this class anywhere. Schedule for review/delete.
 const X = 0, Y = 1;
@@ -937,6 +934,23 @@ class Vector2 {
     }
     dot(b) {
         return (this.x * b.x) + (this.y * b.y);
+    }
+    static barycentric(P, a, b, c, o) {
+        let va = [c[0] - a[0], b[0] - a[0], a[0] - P[0]];
+        let vb = [c[1] - a[1], b[1] - a[1], a[1] - P[1]];
+        let bc = [0, 0, 0];
+        __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */].cross(va, vb, bc);
+        // Outside
+        if (Math.abs(bc[2]) < 1) {
+            o[0] = -1;
+            o[1] = -1;
+            o[2] = -1;
+            return;
+        }
+        let iz = 1 / bc[2];
+        o[0] = 1.0 - (bc[0] + bc[1]) * iz;
+        o[1] = bc[1] * iz;
+        o[2] = bc[0] * iz;
     }
     barycentric(a, b, c) {
         let va = [c.x - a.x, b.x - a.x, a.x - this.x];
@@ -966,7 +980,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__ = __webpack_require__(9);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__ = __webpack_require__(10);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__Device__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__Matrix__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__Matrix__ = __webpack_require__(1);
 
 
 
@@ -983,7 +997,7 @@ let s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPA
 let m = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
 m.boxgeometry(1, 1, 1);
 let mprojection = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Camera -> Screen
-let mcamera = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Obviously
+let mcamera = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Duh
 let mrotatey = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Object space rotation
 let mtranslate = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Object position in world
 let mtransform = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Concatenated transformation
@@ -991,8 +1005,9 @@ __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].perspective(45, SCR_WID
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 5], [0, 0, 0], [0, 1, 0], mcamera);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].rotationy(10, mrotatey);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].translate(0, 0, 0, mtranslate);
+__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mrotatey, mtranslate], m.matrix);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([
-    mrotatey, mtranslate, mcamera, mprojection
+    mcamera, mprojection
 ], mtransform);
 w.load("./wasm/WasmRasteriser").then((wasm) => {
     // Create a rasteriser
@@ -1113,7 +1128,6 @@ function runbenchmarks(wasm)
   }
 
   let realtotal_read = performance.now() - tstart;
-
 
   console.log(`For ${iterations} WRITE iterations to ${bsize} bytes in WASM View took ${wasmtotal_write} ms`);
   console.log(`For ${iterations} WRITE iterations to ${bsize} bytes in REAL View took ${realtotal_write} ms`);

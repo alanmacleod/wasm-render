@@ -32,6 +32,28 @@ export default class Vector2
     return (this.x * b.x) + (this.y * b.y);
   }
 
+  public static barycentric(P:number[], a:number[], b:number[], c:number[], o:number[]): void
+  {
+    let va = [ c[0] - a[0], b[0] - a[0], a[0] - P[0] ];
+    let vb = [ c[1] - a[1], b[1] - a[1], a[1] - P[1] ];
+    let bc = [ 0, 0 ,0 ];
+
+    Vector3.cross( va, vb, bc );
+
+    // Outside
+    if (Math.abs(bc[ 2 ]) < 1)
+    {
+      o[0] = -1; o[1] = -1; o[2] = -1;
+      return;
+    }
+
+    let iz = 1 / bc[ 2 ];
+
+    o[0] = 1.0 - (bc[0] + bc[1]) * iz;
+    o[1] = bc[1] * iz;
+    o[2] = bc[0] * iz;
+  }
+
   public barycentric(a:Vector2, b:Vector2, c:Vector2): number[]
   {
     let va = [c.x - a.x, b.x - a.x, a.x - this.x];

@@ -1,4 +1,5 @@
 
+import Matrix from  '../Matrix';
 
 export default class Mesh
 {
@@ -6,7 +7,12 @@ export default class Mesh
   public faces:number[][];
   public uvs:number[][][];
 
-  constructor(){}
+  public matrix:number[][];
+
+  constructor()
+  {
+    this.matrix = Matrix.create();
+  }
 
   //public loadobj(url):void {}
 
@@ -35,9 +41,9 @@ export default class Mesh
       [5,0,1],
       [7,6,2],
       [6,3,2],
-      [5,7,0],
+      [5,7,0], // 'front'
       [7,2,0],
-      [1,3,4],
+      [1,3,4], // 'rear'
       [3,6,4]
     ];
 

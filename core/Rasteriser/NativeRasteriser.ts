@@ -101,53 +101,52 @@ export default class NativeRasteriser implements IRasteriser
       this.wireframe(points);
       return;
     }
-    // // Get a bounding box from three points
-    // let minx:number = Math.min(points[0].x, Math.min(points[1].x, points[2].x));
-    // let maxx:number = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
-    // let miny:number = Math.min(points[0].y, Math.min(points[1].y, points[2].y));
-    // let maxy:number = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
-    //
-    // // clipping
-    // minx = Math.max(0, minx);
-    // miny = Math.max(0, miny);
-    // maxx = Math.min(this.width-1, maxx);
-    // maxy = Math.min(this.height-1, maxy);
-    //
-    // // off-screen test
-    // if (maxx < 0) return;
-    // if (maxy < 0) return;
-    // if (minx >= this.width) return;
-    // if (miny >= this.height) return;
-    //
-    // let P = new Vector2();
-    // let o = [0,0,0];
-    //
-    // // Scan a simple bbox
-    // for ( let y=miny; y<=maxy; y++ )
-    // {
-    //   for (let x=minx; x<=maxx; x++ )
-    //   {
-    //     // Test each coord
-    //     P.x = x;
-    //     P.y = y;
-    //
-    //     // Can be massively optimised by unrolling this call
-    //     o = P.barycentric(points[0], points[1], points[2]);
-    //
-    //     // o = weighted ratio of each corner
-    //     // points[0] = o.x
-    //     // points[1] = o.y
-    //     // points[2] = o.z
-    //
-    //     if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
-    //
-    //     // Mul o by coords to get u,v
-    //
-    //     // This coord is in the triangle, draw it
-    //     this.pset( x, y, r, g, b );
-    //
-    //   }
-    // }
+    // Get a bounding box from three points
+    let minx:number = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
+    let maxx:number = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
+    let miny:number = Math.min(points[0][1], Math.min(points[1][1], points[2][1]));
+    let maxy:number = Math.max(points[0][1], Math.max(points[1][1], points[2][1]));
+
+    // clipping
+    minx = Math.max(0, minx);
+    miny = Math.max(0, miny);
+    maxx = Math.min(this.width-1, maxx);
+    maxy = Math.min(this.height-1, maxy);
+
+    // off-screen test
+    if (maxx < 0) return;
+    if (maxy < 0) return;
+    if (minx >= this.width) return;
+    if (miny >= this.height) return;
+
+    let P = [0,0];//new Vector2();
+    let o = [0,0,0];
+
+    // Scan a simple bbox
+    for ( let y=miny; y<=maxy; y++ )
+    {
+      for (let x=minx; x<=maxx; x++ )
+      {
+        P[0] = x;
+        P[1] = y;
+
+        // Can be massively optimised by unrolling this call
+        Vector2.barycentric(P, points[0], points[1], points[2], o);
+
+        // o = weighted ratio of each corner
+        // points[0] = o.x
+        // points[1] = o.y
+        // points[2] = o.z
+
+        if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
+
+        // Mul o by coords to get u,v
+
+        // This coord is in the triangle, draw it
+        this.pset( x, y, r, g, b );
+
+      }
+    }
 
   }
 
@@ -288,17 +287,18 @@ export default class NativeRasteriser implements IRasteriser
       {
         vertex = m.vertices[f[v]];
 
-        // Tranform this vertex
-        Matrix.transform(vertex, mat, triscreen[v]);
+        // Vertex shader
+        // Object.matrix -> world space
+        Matrix.transform(vertex, m.matrix, triworld[v]);
+
+        // View & Projection matrix -> screen
+        Matrix.transform(triworld[v], mat, triscreen[v]);
 
         // Scale it onto display space
         triscreen[v][0] =  triscreen[v][0] * this.width + this.hwidth;
         triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
-
-        triworld[v] = vertex;
       }
 
-      // Need to transform normals!
       Vector3.sub(triworld[2], triworld[1], v1);
       Vector3.sub(triworld[1], triworld[0], v2);
       Vector3.cross(v1, v2, fnormal);
@@ -308,7 +308,7 @@ export default class NativeRasteriser implements IRasteriser
 
       if (power > 0)
       {
-        this.tri(triscreen, 255,255,255,true);
+        this.tri(triscreen, 255 * power,255 * power,255 * power, !true);
       }
     }
   }
