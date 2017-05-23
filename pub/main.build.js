@@ -387,6 +387,7 @@ class Device {
             throw new ReferenceError("`rasteriser.buffer: Uint8ClampedArray` is required!");
         this.imageData.data.set(this.rasteriser.buffer);
         this.context.putImageData(this.imageData, 0, 0);
+        this.rasteriser.end();
     }
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = Device;
@@ -596,7 +597,13 @@ class NativeRasteriser {
         this.hheight = (h / 2) >> 0;
         this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_3__Sym__["a" /* BYTES_PER_PIXEL */];
         this.buffer = new Uint8ClampedArray(this.pagesize);
+        this.zbuffer = new Float32Array(w * h);
         this.ready = true;
+    }
+    begin() {
+    }
+    end() {
+        this.zbuffer.fill(0);
     }
     // Standard Bres' line routine, I've been copying, pasting and translating
     // this code of mine for about 10 years. It's seen around six languages.
@@ -677,15 +684,19 @@ class NativeRasteriser {
                 P[1] = y;
                 // Can be massively optimised by unrolling this call
                 __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */].barycentric(P, points[0], points[1], points[2], o);
-                // o = weighted ratio of each corner
-                // points[0] = o.x
-                // points[1] = o.y
-                // points[2] = o.z
                 if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
-                // Mul o by coords to get u,v
-                // This coord is in the triangle, draw it
-                this.pset(x, y, r, g, b);
+                // This coord is in the triangle
+                // Calculate the pixel's Z
+                let z = points[0][2] * o[0] +
+                    points[1][2] * o[1] +
+                    points[2][2] * o[2];
+                let zo = y * this.width + x;
+                // Is it closer than an existing pixel? Draw it
+                if (this.zbuffer[zo] < z) {
+                    this.zbuffer[zo] = z;
+                    this.pset(x, y, r, g, b);
+                }
             }
         }
     }
@@ -802,6 +813,7 @@ class NativeRasteriser {
                 // Scale it onto display space
                 triscreen[v][0] = triscreen[v][0] * this.width + this.hwidth;
                 triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
+                triscreen[v][2] = triworld[v][2];
             }
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].sub(triworld[2], triworld[1], v1);
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].sub(triworld[1], triworld[0], v2);
@@ -834,6 +846,8 @@ class WasmRasteriser {
         this.wasm = wasm;
         this.ready = false;
     }
+    begin() { }
+    end() { }
     init(w, h) {
         this.width = w;
         this.height = h;

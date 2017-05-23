@@ -70,6 +70,8 @@ export default class Device
 
     this.imageData.data.set( this.rasteriser.buffer );
     this.context.putImageData( this.imageData, 0, 0 );
+
+    this.rasteriser.end();
   }
 
 

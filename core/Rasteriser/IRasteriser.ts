@@ -10,6 +10,10 @@ interface IRasteriser
   fill( r:number, g:number, b:number ): void;
   pset( x:number, y:number, r:number, g:number, b:number );
 
+  // Setup and tear-down methods called by Device every frame
+  begin(): void;
+  end(): void;
+
   rasterise( mesh:Mesh, matrix:number[][] ): void;
 }
 

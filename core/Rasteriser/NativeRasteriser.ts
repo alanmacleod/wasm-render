@@ -20,6 +20,9 @@ export default class NativeRasteriser implements IRasteriser
   private hwidth: number;
   private hheight: number;
 
+  // Use a SharedMemory?
+  private zbuffer: Float32Array;
+
   // IRasteriser members
   // TODO: Perhaps use Uint32 bytepack view for cleaner/faster/easier writes?
   // Real TypedArray to emulate wasm heap
@@ -37,7 +40,18 @@ export default class NativeRasteriser implements IRasteriser
     this.height = h; this.hheight = (h/2)>>0;
     this.pagesize = w * h * BYTES_PER_PIXEL;
     this.buffer = new Uint8ClampedArray( this.pagesize );
+    this.zbuffer = new Float32Array( w * h );
     this.ready = true;
+  }
+
+  public begin()
+  {
+
+  }
+
+  public end()
+  {
+    this.zbuffer.fill(0);
   }
 
   // Standard Bres' line routine, I've been copying, pasting and translating
@@ -101,6 +115,7 @@ export default class NativeRasteriser implements IRasteriser
       this.wireframe(points);
       return;
     }
+
     // Get a bounding box from three points
     let minx:number = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
     let maxx:number = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
@@ -136,17 +151,23 @@ export default class NativeRasteriser implements IRasteriser
         // Can be massively optimised by unrolling this call
         Vector2.barycentric(P, points[0], points[1], points[2], o);
 
-        // o = weighted ratio of each corner
-        // points[0] = o.x
-        // points[1] = o.y
-        // points[2] = o.z
-
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
-        // Mul o by coords to get u,v
+        // This coord is in the triangle
 
-        // This coord is in the triangle, draw it
-        this.pset( x, y, r, g, b );
+        // Calculate the pixel's Z
+        let z = points[0][2] * o[0] +
+                points[1][2] * o[1] +
+                points[2][2] * o[2];
+
+        let zo = y * this.width + x;
+
+        // Is it closer than an existing pixel? Draw it
+        if (this.zbuffer[zo] < z)
+        {
+          this.zbuffer[zo] = z;
+          this.pset( x, y, r, g, b );
+        }
 
       }
     }
@@ -300,6 +321,7 @@ export default class NativeRasteriser implements IRasteriser
         // Scale it onto display space
         triscreen[v][0] =  triscreen[v][0] * this.width + this.hwidth;
         triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
+        triscreen[v][2] = triworld[v][2];
       }
 
       Vector3.sub(triworld[2], triworld[1], v1);

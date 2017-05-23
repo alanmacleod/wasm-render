@@ -24,6 +24,9 @@ export default class WasmRasteriser implements IRasteriser
     this.ready = false;
   }
 
+  public begin(){}
+  public end(){}
+
   public init(w: number, h: number)
   {
     this.width = w;
