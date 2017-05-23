@@ -9,10 +9,44 @@ export default class Mesh
 
   public matrix:number[][];
 
+  public position:number[];
+  public rotation:number[];
+
+  private mrotation:number[][];
+  private mtranslation: number[][];
+
   constructor()
   {
     this.matrix = Matrix.create();
+    this.mrotation = Matrix.create();
+    this.mtranslation = Matrix.create();
+
+    this.position = [0,0,0];
+    this.rotation = [0,0,0];
   }
+
+  public updatematrix():void
+  {
+    // Y only
+    Matrix.rotationy(this.rotation[1], this.mrotation);
+    Matrix.translate(this.position, this.mtranslation);
+
+    Matrix.concat([this.mrotation, this.mtranslation], this.matrix);
+  }
+
+  public set(position:number[], rotation?:number[])
+  {
+    this.position = position;
+    this.rotation = (rotation) ? rotation : this.rotation;
+    this.updatematrix();
+  }
+
+  public setrotation(rotation:number[])
+  {
+    this.rotation = rotation;
+    this.updatematrix();
+  }
+
 
   //public loadobj(url):void {}
 

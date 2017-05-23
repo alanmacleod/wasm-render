@@ -54,12 +54,12 @@ export default class Matrix
   }
 
   // Simple translation matrix
-  public static translate(x:number, y:number, z:number, out:number[][]): void
+  public static translate(position:number[], out:number[][]): void
   {
     Matrix.identity(out);
-    out[3][0] = x;
-    out[3][1] = y;
-    out[3][2] = z;
+    out[3][0] = position[0];
+    out[3][1] = position[1];
+    out[3][2] = position[2];
   }
 
   // Perspective transform matrix, god this took bloody ages to get right

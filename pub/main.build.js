@@ -130,11 +130,11 @@ class Matrix {
         out[2] = z * winv;
     }
     // Simple translation matrix
-    static translate(x, y, z, out) {
+    static translate(position, out) {
         Matrix.identity(out);
-        out[3][0] = x;
-        out[3][1] = y;
-        out[3][2] = z;
+        out[3][0] = position[0];
+        out[3][1] = position[1];
+        out[3][2] = position[2];
     }
     // Perspective transform matrix, god this took bloody ages to get right
     static perspective(fov, ar, near, far, out) {
@@ -529,6 +529,25 @@ class WasmLoader {
 class Mesh {
     constructor() {
         this.matrix = __WEBPACK_IMPORTED_MODULE_0__Matrix__["a" /* default */].create();
+        this.mrotation = __WEBPACK_IMPORTED_MODULE_0__Matrix__["a" /* default */].create();
+        this.mtranslation = __WEBPACK_IMPORTED_MODULE_0__Matrix__["a" /* default */].create();
+        this.position = [0, 0, 0];
+        this.rotation = [0, 0, 0];
+    }
+    updatematrix() {
+        // Y only
+        __WEBPACK_IMPORTED_MODULE_0__Matrix__["a" /* default */].rotationy(this.rotation[1], this.mrotation);
+        __WEBPACK_IMPORTED_MODULE_0__Matrix__["a" /* default */].translate(this.position, this.mtranslation);
+        __WEBPACK_IMPORTED_MODULE_0__Matrix__["a" /* default */].concat([this.mrotation, this.mtranslation], this.matrix);
+    }
+    set(position, rotation) {
+        this.position = position;
+        this.rotation = (rotation) ? rotation : this.rotation;
+        this.updatematrix();
+    }
+    setrotation(rotation) {
+        this.rotation = rotation;
+        this.updatematrix();
     }
     //public loadobj(url):void {}
     boxgeometry(width, height, depth) {
@@ -770,6 +789,8 @@ class NativeRasteriser {
         this.buffer[o + 2] = b;
         this.buffer[o + 3] = 255;
     }
+    // Can be optimised by providing Int32 view into the same buffer and filling
+    // with bytepack32 colour. Don't think I need this method at all though.
     fill(r, g, b) {
         for (let o = 0; o < this.pagesize; o += 4) {
             this.buffer[o + 0] = r;
@@ -1012,6 +1033,8 @@ let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
 let s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS); // Performance monitoring
 let m = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
 m.boxgeometry(1, 1, 1);
+let m2 = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
+m2.boxgeometry(0.5, 0.5, 0.5);
 let mprojection = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Camera -> Screen
 let mcamera = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Duh
 let mrotatey = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Object space rotation
@@ -1019,9 +1042,12 @@ let mtranslate = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create
 let mtransform = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Concatenated transformation
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].perspective(45, SCR_WIDTH / SCR_HEIGHT, 0.01, 1.0, mprojection);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 10], [0, 0, 0], [0, 1, 0], mcamera);
-__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].rotationy(5, mrotatey);
-__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].translate(0, 0, 0, mtranslate);
-__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mrotatey, mtranslate], m.matrix);
+// Matrix.rotationy(5, mrotatey);
+// Matrix.translate([0,0,0], mtranslate);
+//
+// Matrix.concat([mrotatey, mtranslate], m.matrix);
+m.set([0, 0, 0], [0, 5, 0]);
+m2.set([-0.5, 0.7, 0], [0, 5, 0]);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([
     mcamera, mprojection
 ], mtransform);
@@ -1040,11 +1066,11 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     function render() {
         s.begin();
         ang += 3;
-        __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].rotationy(ang, mrotatey);
-        __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].translate(0, 0, 0, mtranslate);
-        __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mrotatey, mtranslate], m.matrix);
+        m.setrotation([0, ang, 0]);
+        m2.setrotation([0, ang * 2, 0]);
         nraster.fill(32, 0, 128);
         nraster.rasterise(m, mtransform);
+        nraster.rasterise(m2, mtransform);
         device.flip();
         s.end();
         requestAnimationFrame(render);

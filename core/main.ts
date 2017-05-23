@@ -20,6 +20,10 @@ let s = new StatsGraph(StatsMode.MS); // Performance monitoring
 let m = new Mesh();
 m.boxgeometry(1,1,1);
 
+let m2 = new Mesh();
+m2.boxgeometry(0.5,0.5,0.5);
+
+
 let mprojection = Matrix.create(); // Camera -> Screen
 let mcamera     = Matrix.create(); // Duh
 let mrotatey    = Matrix.create(); // Object space rotation
@@ -29,10 +33,13 @@ let mtransform  = Matrix.create(); // Concatenated transformation
 Matrix.perspective(45, SCR_WIDTH/SCR_HEIGHT, 0.01, 1.0, mprojection);
 Matrix.lookat([0,0,10], [0,0,0], [0,1,0], mcamera);
 
-Matrix.rotationy(5, mrotatey);
-Matrix.translate(0,0,0, mtranslate);
+// Matrix.rotationy(5, mrotatey);
+// Matrix.translate([0,0,0], mtranslate);
+//
+// Matrix.concat([mrotatey, mtranslate], m.matrix);
 
-Matrix.concat([mrotatey, mtranslate], m.matrix);
+m.set( [0,0,0], [0,5,0] );
+m2.set( [-0.5,0.7,0], [0,5,0] );
 
 Matrix.concat([
     mcamera, mprojection
@@ -61,13 +68,14 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
     s.begin();
     ang += 3;
 
-    Matrix.rotationy(ang, mrotatey);
-    Matrix.translate(0,0,0, mtranslate);
-
-    Matrix.concat([mrotatey, mtranslate], m.matrix);
+    m.setrotation( [0,ang,0] );
+    m2.setrotation( [0,ang*2,0] );
 
     nraster.fill(32,0,128);
+
     nraster.rasterise(m, mtransform);
+    nraster.rasterise(m2, mtransform);
+
     device.flip();
 
     s.end();
