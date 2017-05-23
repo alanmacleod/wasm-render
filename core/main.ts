@@ -27,7 +27,7 @@ let mtranslate  = Matrix.create(); // Object position in world
 let mtransform  = Matrix.create(); // Concatenated transformation
 
 Matrix.perspective(45, SCR_WIDTH/SCR_HEIGHT, 0.01, 1.0, mprojection);
-Matrix.lookat([0,0,5], [0,0,0], [0,1,0], mcamera);
+Matrix.lookat([0,0,10], [0,0,0], [0,1,0], mcamera);
 
 Matrix.rotationy(5, mrotatey);
 Matrix.translate(0,0,0, mtranslate);
@@ -74,70 +74,6 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 
     requestAnimationFrame(render);
   }
-
-  //nraster.line(-10, -10, 1000, 1000, 255, 255, 255, true);
-
-
- //  let pts:Vector2[] = [
- //      new Vector2(10, 10),
- //      new Vector2(450, 10),
- //      new Vector2(10, 450)
- //  ];
- //
- //  let uvs:Vector2[] = [
- //    new Vector2(0,0),
- //    new Vector2(1,0),
- //    new Vector2(0,1)
- //  ];
- //
- //  // timeout for testing so the .PNG can load
- //  window.setTimeout(() => {
- //
- //    nraster.tritex(pts,uvs,t, 255, 0, 255)
- //    device.flip();
- //
- // }, 200);
-
-  // for (let x=0; x <640; x+=8)
-  // {
-  //   wraster.vline(x, 0, 479, 255,255,255);
-  //   wraster.vline(x+1, 0, 479, 0,0,0);
-  //   wraster.vline(x+2, 0, 479, 255,255,255);
-  // }
-
-  // for (let t=0; t<10000; t++)
-  // {
-  //   nraster.line(
-  //     Math.floor(Math.random() * SCR_WIDTH),
-  //     Math.floor(Math.random() * SCR_HEIGHT),
-  //     Math.floor(Math.random() * SCR_WIDTH),
-  //     Math.floor(Math.random() * SCR_HEIGHT),
-  //     Math.floor(Math.random() * 255),
-  //     Math.floor(Math.random() * 255),
-  //     Math.floor(Math.random() * 255)
-  //   );
-  // }
-
-  // device.flip();
-  //
-  // requestAnimationFrame(render);
-  //
-  // function render()
-  // {
-  //   s.begin();
-  //   device.flip();
-  //   s.end();
-  //
-  //   // s.begin();
-  //   // for (let t:number = 0; t<60; t++)
-  //   // {
-  //   //   //wasm.a.addOne(128, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
-  //   //   device.flip(view);
-  //   // }
-  //   // s.end();
-  //   //
-  //   requestAnimationFrame(render);
-  // }
 
 });
 

@@ -145,11 +145,8 @@ export default class NativeRasteriser implements IRasteriser
     {
       for (let x=minx; x<=maxx; x++ )
       {
-        P[0] = x;
-        P[1] = y;
-
         // Can be massively optimised by unrolling this call
-        Vector2.barycentric(P, points[0], points[1], points[2], o);
+        Vector2.barycentric([x,y], points[0], points[1], points[2], o);
 
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
@@ -265,7 +262,8 @@ export default class NativeRasteriser implements IRasteriser
     this.buffer[ o + 3 ] = 255;
   }
 
-
+  // Can be optimised by providing Int32 view into the same buffer and filling
+  // with bytepack32 colour. Don't think I need this method at all though.
   public fill(r:number, g:number, b:number): void
   {
     for (let o:number=0; o<this.pagesize; o+=4)
@@ -321,7 +319,7 @@ export default class NativeRasteriser implements IRasteriser
         // Scale it onto display space
         triscreen[v][0] =  triscreen[v][0] * this.width + this.hwidth;
         triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
-        triscreen[v][2] = triworld[v][2];
+        triscreen[v][2] =  triworld[v][2]; // Stuff world Z into screen coord
       }
 
       Vector3.sub(triworld[2], triworld[1], v1);
@@ -333,10 +331,7 @@ export default class NativeRasteriser implements IRasteriser
 
       // power = 1;
       if (power > 0)
-      {
-        //power = 1;
         this.tri(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, !true);
-      }
     }
   }
 

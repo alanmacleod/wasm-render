@@ -680,10 +680,8 @@ class NativeRasteriser {
         let o = [0, 0, 0];
         for (let y = miny; y <= maxy; y++) {
             for (let x = minx; x <= maxx; x++) {
-                P[0] = x;
-                P[1] = y;
                 // Can be massively optimised by unrolling this call
-                __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */].barycentric(P, points[0], points[1], points[2], o);
+                __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */].barycentric([x, y], points[0], points[1], points[2], o);
                 if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
                 // This coord is in the triangle
@@ -813,7 +811,7 @@ class NativeRasteriser {
                 // Scale it onto display space
                 triscreen[v][0] = triscreen[v][0] * this.width + this.hwidth;
                 triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
-                triscreen[v][2] = triworld[v][2];
+                triscreen[v][2] = triworld[v][2]; // Stuff world Z into screen coord
             }
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].sub(triworld[2], triworld[1], v1);
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].sub(triworld[1], triworld[0], v2);
@@ -821,10 +819,8 @@ class NativeRasteriser {
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].norm(fnormal, fnormal);
             let power = __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].dot(fnormal, light);
             // power = 1;
-            if (power > 0) {
-                //power = 1;
+            if (power > 0)
                 this.tri(triscreen, (255 * power) >> 0, (255 * power) >> 0, (255 * power) >> 0, !true);
-            }
         }
     }
 }
@@ -1022,7 +1018,7 @@ let mrotatey = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create()
 let mtranslate = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Object position in world
 let mtransform = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Concatenated transformation
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].perspective(45, SCR_WIDTH / SCR_HEIGHT, 0.01, 1.0, mprojection);
-__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 5], [0, 0, 0], [0, 1, 0], mcamera);
+__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 10], [0, 0, 0], [0, 1, 0], mcamera);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].rotationy(5, mrotatey);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].translate(0, 0, 0, mtranslate);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mrotatey, mtranslate], m.matrix);
@@ -1053,64 +1049,6 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
         s.end();
         requestAnimationFrame(render);
     }
-    //nraster.line(-10, -10, 1000, 1000, 255, 255, 255, true);
-    //  let pts:Vector2[] = [
-    //      new Vector2(10, 10),
-    //      new Vector2(450, 10),
-    //      new Vector2(10, 450)
-    //  ];
-    //
-    //  let uvs:Vector2[] = [
-    //    new Vector2(0,0),
-    //    new Vector2(1,0),
-    //    new Vector2(0,1)
-    //  ];
-    //
-    //  // timeout for testing so the .PNG can load
-    //  window.setTimeout(() => {
-    //
-    //    nraster.tritex(pts,uvs,t, 255, 0, 255)
-    //    device.flip();
-    //
-    // }, 200);
-    // for (let x=0; x <640; x+=8)
-    // {
-    //   wraster.vline(x, 0, 479, 255,255,255);
-    //   wraster.vline(x+1, 0, 479, 0,0,0);
-    //   wraster.vline(x+2, 0, 479, 255,255,255);
-    // }
-    // for (let t=0; t<10000; t++)
-    // {
-    //   nraster.line(
-    //     Math.floor(Math.random() * SCR_WIDTH),
-    //     Math.floor(Math.random() * SCR_HEIGHT),
-    //     Math.floor(Math.random() * SCR_WIDTH),
-    //     Math.floor(Math.random() * SCR_HEIGHT),
-    //     Math.floor(Math.random() * 255),
-    //     Math.floor(Math.random() * 255),
-    //     Math.floor(Math.random() * 255)
-    //   );
-    // }
-    // device.flip();
-    //
-    // requestAnimationFrame(render);
-    //
-    // function render()
-    // {
-    //   s.begin();
-    //   device.flip();
-    //   s.end();
-    //
-    //   // s.begin();
-    //   // for (let t:number = 0; t<60; t++)
-    //   // {
-    //   //   //wasm.a.addOne(128, HEAP_buffer_ptr8, PAGE_SIZE_BYTES);
-    //   //   device.flip(view);
-    //   // }
-    //   // s.end();
-    //   //
-    //   requestAnimationFrame(render);
-    // }
 });
 /*
 function runbenchmarks(wasm)
