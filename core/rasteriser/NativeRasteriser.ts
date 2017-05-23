@@ -115,7 +115,7 @@ export default class NativeRasteriser implements IRasteriser
       this.wireframe(points);
       return;
     }
-
+    
     // Get a bounding box from three points
     let minx:number = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
     let maxx:number = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
@@ -221,6 +221,9 @@ export default class NativeRasteriser implements IRasteriser
     let texw = tex.width;
     let texh = tex.height;
 
+    let u=0, v=0;
+    let r=0, g=0, b=0;
+
     // Scan a simple bbox
     for ( let y=miny; y<=maxy; y++ )
     {
@@ -233,18 +236,19 @@ export default class NativeRasteriser implements IRasteriser
         // Check [0] first
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
+        // Depth test
         let z = points[0][2] * o[0] +
                 points[1][2] * o[1] +
                 points[2][2] * o[2];
         let zo = y * this.width + x;
 
-        // Is it closer than an existing pixel? Draw it
+        // Pixel is behind existing, skip
         if (this.zbuffer[zo] > z) continue;
-        //
+
         this.zbuffer[zo] = z;
 
-        let u = Math.round((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2] ) * texmaxu);
-        let v = Math.round((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2] ) * texmaxv);
+        let u = ((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2] ) * texmaxu)>>0;
+        let v = ((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2] ) * texmaxv)>>0;
 
         let c = (v * texw << BIT_SHIFT_PER_PIXEL) + (u << BIT_SHIFT_PER_PIXEL);
         let r = texels[ c+0 ] * light;
@@ -274,13 +278,13 @@ export default class NativeRasteriser implements IRasteriser
     this.buffer.fill(0);
 
     return;
-    for (let o:number=0; o<this.pagesize; o+=4)
-    {
-      this.buffer[ o + 0 ] = r;
-      this.buffer[ o + 1 ] = g;
-      this.buffer[ o + 2 ] = b;
-      this.buffer[ o + 3 ] = 255;
-    }
+    // for (let o:number=0; o<this.pagesize; o+=4)
+    // {
+    //   this.buffer[ o + 0 ] = r;
+    //   this.buffer[ o + 1 ] = g;
+    //   this.buffer[ o + 2 ] = b;
+    //   this.buffer[ o + 3 ] = 255;
+    // }
   }
 
   rasterise(m: Mesh, mat:number[][])

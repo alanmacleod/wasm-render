@@ -11,7 +11,7 @@ import Vector3                        from './Vector3';
 import Matrix                         from './Matrix';
 
 const INT32_SIZE_IN_BYTES = 4;
-const SCR_WIDTH = 640, SCR_HEIGHT = 480;
+const SCR_WIDTH = 800, SCR_HEIGHT = 600;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 
 let w = new WasmLoader();
@@ -55,7 +55,7 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   let device = new Device(SCR_WIDTH, SCR_HEIGHT, nraster);
   device.create();
 
-  let t = new Texture(wasm, "./img/test-texture.png");
+  let t = new Texture(wasm, "./img/radicrate.jpg");
 
   m.textures.push(t);
   m2.textures.push(t);
@@ -71,8 +71,8 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
     s.begin();
     ang += 3;
 
-    m.setrotation( [0,ang,0] );
-    m2.setrotation( [0,ang*2,0] );
+    m.setrotation( [0,ang%360,0] );
+    m2.setrotation( [0,(ang*3)%360,0] );
 
     //nraster.fill(32,0,128);
     nraster.fill(0,0,0);

@@ -777,6 +777,8 @@ class NativeRasteriser {
         let texmaxv = tex.maxv;
         let texw = tex.width;
         let texh = tex.height;
+        let u = 0, v = 0;
+        let r = 0, g = 0, b = 0;
         // Scan a simple bbox
         for (let y = miny; y <= maxy; y++) {
             for (let x = minx; x <= maxx; x++) {
@@ -786,17 +788,17 @@ class NativeRasteriser {
                 // Check [0] first
                 if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
+                // Depth test
                 let z = points[0][2] * o[0] +
                     points[1][2] * o[1] +
                     points[2][2] * o[2];
                 let zo = y * this.width + x;
-                // Is it closer than an existing pixel? Draw it
+                // Pixel is behind existing, skip
                 if (this.zbuffer[zo] > z)
                     continue;
-                //
                 this.zbuffer[zo] = z;
-                let u = Math.round((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2]) * texmaxu);
-                let v = Math.round((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2]) * texmaxv);
+                let u = ((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2]) * texmaxu) >> 0;
+                let v = ((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2]) * texmaxv) >> 0;
                 let c = (v * texw << __WEBPACK_IMPORTED_MODULE_3__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_3__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]);
                 let r = texels[c + 0] * light;
                 let g = texels[c + 1] * light;
@@ -817,12 +819,13 @@ class NativeRasteriser {
     fill(r, g, b) {
         this.buffer.fill(0);
         return;
-        for (let o = 0; o < this.pagesize; o += 4) {
-            this.buffer[o + 0] = r;
-            this.buffer[o + 1] = g;
-            this.buffer[o + 2] = b;
-            this.buffer[o + 3] = 255;
-        }
+        // for (let o:number=0; o<this.pagesize; o+=4)
+        // {
+        //   this.buffer[ o + 0 ] = r;
+        //   this.buffer[ o + 1 ] = g;
+        //   this.buffer[ o + 2 ] = b;
+        //   this.buffer[ o + 3 ] = 255;
+        // }
     }
     rasterise(m, mat) {
         // Directional light
@@ -1078,7 +1081,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 const INT32_SIZE_IN_BYTES = 4;
-const SCR_WIDTH = 640, SCR_HEIGHT = 480;
+const SCR_WIDTH = 800, SCR_HEIGHT = 600;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
 let s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].FPS); // Performance monitoring
@@ -1108,7 +1111,7 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     let wraster = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);
     let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, nraster);
     device.create();
-    let t = new __WEBPACK_IMPORTED_MODULE_2__Texture__["a" /* default */](wasm, "./img/test-texture.png");
+    let t = new __WEBPACK_IMPORTED_MODULE_2__Texture__["a" /* default */](wasm, "./img/radicrate.jpg");
     m.textures.push(t);
     m2.textures.push(t);
     nraster.fill(32, 0, 128);
@@ -1119,12 +1122,12 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     function render() {
         s.begin();
         ang += 3;
-        m.setrotation([0, ang, 0]);
-        m2.setrotation([0, ang * 2, 0]);
+        m.setrotation([0, ang % 360, 0]);
+        m2.setrotation([0, (ang * 3) % 360, 0]);
         //nraster.fill(32,0,128);
         nraster.fill(0, 0, 0);
         nraster.rasterise(m, mtransform);
-        nraster.rasterise(m2, mtransform);
+        //nraster.rasterise(m2, mtransform);
         device.flip();
         s.end();
         requestAnimationFrame(render);
