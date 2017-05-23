@@ -119,10 +119,13 @@ export default class NativeRasteriser implements IRasteriser
     if (minx >= this.width) return;
     if (miny >= this.height) return;
 
-    let P = [0,0];//new Vector2();
-    let o = [0,0,0];
+    // Fast float->int convert. Need ints otherwise gaps in the BC test.
+    minx >>= 0; maxx >>= 0;
+    miny >>= 0; maxy >>= 0;
 
-    // Scan a simple bbox
+    let P = [0, 0];
+    let o = [0, 0, 0];
+
     for ( let y=miny; y<=maxy; y++ )
     {
       for (let x=minx; x<=maxx; x++ )
@@ -306,9 +309,11 @@ export default class NativeRasteriser implements IRasteriser
 
       let power = Vector3.dot(fnormal, light);
 
+      // power = 1;
       if (power > 0)
       {
-        this.tri(triscreen, 255 * power,255 * power,255 * power, !true);
+        //power = 1;
+        this.tri(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, !true);
       }
     }
   }

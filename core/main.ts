@@ -29,7 +29,7 @@ let mtransform  = Matrix.create(); // Concatenated transformation
 Matrix.perspective(45, SCR_WIDTH/SCR_HEIGHT, 0.01, 1.0, mprojection);
 Matrix.lookat([0,0,5], [0,0,0], [0,1,0], mcamera);
 
-Matrix.rotationy(10, mrotatey);
+Matrix.rotationy(5, mrotatey);
 Matrix.translate(0,0,0, mtranslate);
 
 Matrix.concat([mrotatey, mtranslate], m.matrix);
@@ -53,6 +53,27 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   nraster.fill(32,0,128);
   nraster.rasterise(m, mtransform);
   device.flip();
+
+  requestAnimationFrame(render);
+  var ang = 0;
+  function render()
+  {
+    s.begin();
+    ang += 3;
+
+    Matrix.rotationy(ang, mrotatey);
+    Matrix.translate(0,0,0, mtranslate);
+
+    Matrix.concat([mrotatey, mtranslate], m.matrix);
+
+    nraster.fill(32,0,128);
+    nraster.rasterise(m, mtransform);
+    device.flip();
+
+    s.end();
+
+    requestAnimationFrame(render);
+  }
 
   //nraster.line(-10, -10, 1000, 1000, 255, 255, 255, true);
 

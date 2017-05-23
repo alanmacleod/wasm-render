@@ -664,9 +664,13 @@ class NativeRasteriser {
             return;
         if (miny >= this.height)
             return;
-        let P = [0, 0]; //new Vector2();
+        // Fast float->int convert. Need ints otherwise gaps in the BC test.
+        minx >>= 0;
+        maxx >>= 0;
+        miny >>= 0;
+        maxy >>= 0;
+        let P = [0, 0];
         let o = [0, 0, 0];
-        // Scan a simple bbox
         for (let y = miny; y <= maxy; y++) {
             for (let x = minx; x <= maxx; x++) {
                 P[0] = x;
@@ -804,8 +808,10 @@ class NativeRasteriser {
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].cross(v1, v2, fnormal);
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].norm(fnormal, fnormal);
             let power = __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].dot(fnormal, light);
+            // power = 1;
             if (power > 0) {
-                this.tri(triscreen, 255 * power, 255 * power, 255 * power, !true);
+                //power = 1;
+                this.tri(triscreen, (255 * power) >> 0, (255 * power) >> 0, (255 * power) >> 0, !true);
             }
         }
     }
@@ -1003,7 +1009,7 @@ let mtranslate = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create
 let mtransform = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Concatenated transformation
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].perspective(45, SCR_WIDTH / SCR_HEIGHT, 0.01, 1.0, mprojection);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 5], [0, 0, 0], [0, 1, 0], mcamera);
-__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].rotationy(10, mrotatey);
+__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].rotationy(5, mrotatey);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].translate(0, 0, 0, mtranslate);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mrotatey, mtranslate], m.matrix);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([
@@ -1019,6 +1025,20 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     nraster.fill(32, 0, 128);
     nraster.rasterise(m, mtransform);
     device.flip();
+    requestAnimationFrame(render);
+    var ang = 0;
+    function render() {
+        s.begin();
+        ang += 3;
+        __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].rotationy(ang, mrotatey);
+        __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].translate(0, 0, 0, mtranslate);
+        __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mrotatey, mtranslate], m.matrix);
+        nraster.fill(32, 0, 128);
+        nraster.rasterise(m, mtransform);
+        device.flip();
+        s.end();
+        requestAnimationFrame(render);
+    }
     //nraster.line(-10, -10, 1000, 1000, 255, 255, 255, true);
     //  let pts:Vector2[] = [
     //      new Vector2(10, 10),
