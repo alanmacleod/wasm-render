@@ -791,9 +791,10 @@ class NativeRasteriser {
                     points[2][2] * o[2];
                 let zo = y * this.width + x;
                 // Is it closer than an existing pixel? Draw it
-                // if (this.zbuffer[zo] > z) return;
+                if (this.zbuffer[zo] > z)
+                    continue;
                 //
-                // this.zbuffer[zo] = z;
+                this.zbuffer[zo] = z;
                 let u = Math.round((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2]) * texmaxu);
                 let v = Math.round((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2]) * texmaxv);
                 let c = (v * texw << __WEBPACK_IMPORTED_MODULE_3__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_3__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]);
