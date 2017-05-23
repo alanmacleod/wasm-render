@@ -745,7 +745,7 @@ class NativeRasteriser {
             );
         }
     }
-    tritex(points, uvs, tex) {
+    tritex(points, uvs, light, tex) {
         // Get a bounding box from three points
         let minx = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
         let maxx = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
@@ -798,9 +798,9 @@ class NativeRasteriser {
                 let u = Math.round((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2]) * texmaxu);
                 let v = Math.round((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2]) * texmaxv);
                 let c = (v * texw << __WEBPACK_IMPORTED_MODULE_3__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_3__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]);
-                let r = texels[c + 0];
-                let g = texels[c + 1];
-                let b = texels[c + 2];
+                let r = texels[c + 0] * light;
+                let g = texels[c + 1] * light;
+                let b = texels[c + 2] * light;
                 this.pset(x, y, r, g, b);
             }
         }
@@ -815,6 +815,8 @@ class NativeRasteriser {
     // Can be optimised by providing Int32 view into the same buffer and filling
     // with bytepack32 colour. Don't think I need this method at all though.
     fill(r, g, b) {
+        this.buffer.fill(0);
+        return;
         for (let o = 0; o < this.pagesize; o += 4) {
             this.buffer[o + 0] = r;
             this.buffer[o + 1] = g;
@@ -874,7 +876,7 @@ class NativeRasteriser {
                         if (m.textures[whichtex].ready) {
                             let uvs = m.uvs[fi];
                             // this.tri(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, true);
-                            this.tritex(triscreen, uvs, m.textures[whichtex]);
+                            this.tritex(triscreen, uvs, power, m.textures[whichtex]);
                             drawflat = false;
                             // return;
                         }
@@ -1079,7 +1081,7 @@ const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
-let s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS); // Performance monitoring
+let s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].FPS); // Performance monitoring
 let m = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
 m.boxgeometry(1, 1, 1);
 let m2 = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
@@ -1095,8 +1097,8 @@ __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 10], [0, 
 // Matrix.translate([0,0,0], mtranslate);
 //
 // Matrix.concat([mrotatey, mtranslate], m.matrix);
-m.set([0, 0, 0], [0, 5, 0]);
-m2.set([-0.5, 0.7, 0], [0, 5, 0]);
+m.set([0, 0, 4], [0, 0, 0]);
+m2.set([-0.9, 0.2, 4], [0, 5, 0]);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([
     mcamera, mprojection
 ], mtransform);
@@ -1119,7 +1121,8 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
         ang += 3;
         m.setrotation([0, ang, 0]);
         m2.setrotation([0, ang * 2, 0]);
-        nraster.fill(32, 0, 128);
+        //nraster.fill(32,0,128);
+        nraster.fill(0, 0, 0);
         nraster.rasterise(m, mtransform);
         nraster.rasterise(m2, mtransform);
         device.flip();

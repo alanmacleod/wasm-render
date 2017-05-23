@@ -188,7 +188,7 @@ export default class NativeRasteriser implements IRasteriser
 
   }
 
-  public tritex(points:number[][], uvs:number[][], tex: Texture): void
+  public tritex(points:number[][], uvs:number[][], light:number, tex: Texture): void
   {
     // Get a bounding box from three points
     let minx:number = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
@@ -247,9 +247,9 @@ export default class NativeRasteriser implements IRasteriser
         let v = Math.round((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2] ) * texmaxv);
 
         let c = (v * texw << BIT_SHIFT_PER_PIXEL) + (u << BIT_SHIFT_PER_PIXEL);
-        let r = texels[ c+0 ];
-        let g = texels[ c+1 ];
-        let b = texels[ c+2 ];
+        let r = texels[ c+0 ] * light;
+        let g = texels[ c+1 ] * light;
+        let b = texels[ c+2 ] * light;
 
         this.pset( x, y, r, g, b );
       }
@@ -271,6 +271,9 @@ export default class NativeRasteriser implements IRasteriser
   // with bytepack32 colour. Don't think I need this method at all though.
   public fill(r:number, g:number, b:number): void
   {
+    this.buffer.fill(0);
+
+    return;
     for (let o:number=0; o<this.pagesize; o+=4)
     {
       this.buffer[ o + 0 ] = r;
@@ -352,7 +355,7 @@ export default class NativeRasteriser implements IRasteriser
           {
             let uvs = m.uvs[fi];
             // this.tri(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, true);
-            this.tritex(triscreen, uvs, m.textures[whichtex]);
+            this.tritex(triscreen, uvs, power, m.textures[whichtex]);
             drawflat = false;
             // return;
           }

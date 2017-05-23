@@ -15,7 +15,7 @@ const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 
 let w = new WasmLoader();
-let s = new StatsGraph(StatsMode.MS); // Performance monitoring
+let s = new StatsGraph(StatsMode.FPS); // Performance monitoring
 
 let m = new Mesh();
 m.boxgeometry(1,1,1);
@@ -38,8 +38,8 @@ Matrix.lookat([0,0,10], [0,0,0], [0,1,0], mcamera);
 //
 // Matrix.concat([mrotatey, mtranslate], m.matrix);
 
-m.set( [0,0,0], [0,5,0] );
-m2.set( [-0.5,0.7,0], [0,5,0] );
+m.set( [0,0,4], [0,0,0] );
+m2.set( [-0.9,0.2,4], [0,5,0] );
 
 Matrix.concat([
     mcamera, mprojection
@@ -74,7 +74,8 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
     m.setrotation( [0,ang,0] );
     m2.setrotation( [0,ang*2,0] );
 
-    nraster.fill(32,0,128);
+    //nraster.fill(32,0,128);
+    nraster.fill(0,0,0);
 
     nraster.rasterise(m, mtransform);
     nraster.rasterise(m2, mtransform);
