@@ -5,6 +5,7 @@ import Texture  from  '../Texture';
 export default class Mesh
 {
   public vertices:number[][];
+  public vertexnormals: number[][];
   public faces:number[][];
   public uvs:number[][][];
 
@@ -28,6 +29,8 @@ export default class Mesh
 
     this.position = [0,0,0];
     this.rotation = [0,0,0];
+
+
 
     this.textures = [];
   }
@@ -72,6 +75,7 @@ export default class Mesh
       [-0.5,-0.5,-0.5],
       [-0.5,-0.5,0.5]
     ];
+
 
     this.faces = [
       [0,2,1],

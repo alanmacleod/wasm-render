@@ -50,7 +50,7 @@ export default class Matrix
 
     out[0] = x * winv;
     out[1] = y * winv;
-    out[2] = z * winv;
+    out[2] = z;// * winv;
   }
 
   // Simple translation matrix

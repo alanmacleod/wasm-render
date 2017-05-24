@@ -21,7 +21,7 @@ export default class NativeRasteriser implements IRasteriser
   private hheight: number;
 
   // Use a SharedMemory?
-  private zbuffer: Float32Array;
+  private zbuffer: Float64Array;
 
   // IRasteriser members
   // TODO: Perhaps use Uint32 bytepack view for cleaner/faster/easier writes?
@@ -40,7 +40,7 @@ export default class NativeRasteriser implements IRasteriser
     this.height = h; this.hheight = (h/2)>>0;
     this.pagesize = w * h * BYTES_PER_PIXEL;
     this.buffer = new Uint8ClampedArray( this.pagesize );
-    this.zbuffer = new Float32Array( w * h );
+    this.zbuffer = new Float64Array( w * h );
     this.ready = true;
   }
 
@@ -115,7 +115,7 @@ export default class NativeRasteriser implements IRasteriser
       this.wireframe(points);
       return;
     }
-    
+
     // Get a bounding box from three points
     let minx:number = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
     let maxx:number = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
@@ -188,6 +188,7 @@ export default class NativeRasteriser implements IRasteriser
 
   }
 
+
   public tritex(points:number[][], uvs:number[][], light:number, tex: Texture): void
   {
     // Get a bounding box from three points
@@ -212,7 +213,7 @@ export default class NativeRasteriser implements IRasteriser
     minx >>= 0; maxx >>= 0;
     miny >>= 0; maxy >>= 0;
 
-    let P = [0, 0];
+    let P:number[] = [0, 0];
     let o = [0, 0, 0];
 
     let texels = tex.data.buffer;
@@ -224,38 +225,67 @@ export default class NativeRasteriser implements IRasteriser
     let u=0, v=0;
     let r=0, g=0, b=0;
 
+    let inv_p0z = 1 / points[0][2];
+    let inv_p1z = 1 / points[1][2];
+    let inv_p2z = 1 / points[2][2];
+
+    let inv_p0u = uvs[0][0] / points[0][2];
+    let inv_p1u = uvs[1][0] / points[1][2];
+    let inv_p2u = uvs[2][0] / points[2][2];
+
+    let inv_p0v = uvs[0][1] / points[0][2];
+    let inv_p1v = uvs[1][1] / points[1][2];
+    let inv_p2v = uvs[2][1] / points[2][2];
+
+    let inv_Pz = 0;
+    let inv_Pu = 0;
+    let inv_Pv = 0;
+
     // Scan a simple bbox
-    for ( let y=miny; y<=maxy; y++ )
+    for ( P[1]=miny; P[1]<=maxy; P[1]++ )
     {
-      for ( let x=minx; x<=maxx; x++ )
+      for ( P[0]=minx; P[0]<=maxx; P[0]++ )
       {
         // barycentric is _all_ about Barry
         // Can be massively optimised by unrolling this call
-        Vector2.barycentric([x,y], points[0], points[1], points[2], o);
+        Vector2.barycentric(P, points[0], points[1], points[2], o);
 
         // Check [0] first
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
+        inv_Pz =  inv_p0z * o[0] +
+                  inv_p1z * o[1] +
+                  inv_p2z * o[2];
+        inv_Pu =  inv_p0u * o[0] +
+                  inv_p1u * o[1] +
+                  inv_p2u * o[2];
+        inv_Pv =  inv_p0v * o[0] +
+                  inv_p1v * o[1] +
+                  inv_p2v * o[2];
+
         // Depth test
-        let z = points[0][2] * o[0] +
-                points[1][2] * o[1] +
-                points[2][2] * o[2];
-        let zo = y * this.width + x;
+        // let z = points[0][2] * o[0] +
+        //         points[1][2] * o[1] +
+        //         points[2][2] * o[2];
+        let zo = P[1] * this.width + P[0];
 
         // Pixel is behind existing, skip
-        if (this.zbuffer[zo] > z) continue;
+        if (this.zbuffer[zo] > inv_Pz) continue;
 
-        this.zbuffer[zo] = z;
+        this.zbuffer[zo] = inv_Pz;
 
-        let u = ((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2] ) * texmaxu)>>0;
-        let v = ((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2] ) * texmaxv)>>0;
+        // let u = ((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2] ) * texmaxu)>>0;
+        // let v = ((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2] ) * texmaxv)>>0;
+
+        u = ((inv_Pu / inv_Pz) * texmaxu)>>0;
+        v = ((inv_Pv / inv_Pz) * texmaxv)>>0
 
         let c = (v * texw << BIT_SHIFT_PER_PIXEL) + (u << BIT_SHIFT_PER_PIXEL);
         let r = texels[ c+0 ] * light;
         let g = texels[ c+1 ] * light;
         let b = texels[ c+2 ] * light;
 
-        this.pset( x, y, r, g, b );
+        this.pset( P[0], P[1], r, g, b );
       }
     }
 
@@ -287,7 +317,18 @@ export default class NativeRasteriser implements IRasteriser
     // }
   }
 
-  rasterise(m: Mesh, mat:number[][])
+
+  public vertex_shader()
+  {
+
+  }
+
+  public fragment_shader()
+  {
+
+  }
+
+  public rasterise(m: Mesh, mat:number[][])
   {
     // Directional light
     let light = [0, 0, -1];
@@ -313,6 +354,10 @@ export default class NativeRasteriser implements IRasteriser
 
     let vertex;
 
+    let transform = Matrix.create();
+
+    Matrix.concat([m.matrix, mat], transform);
+
     // For each face (triangle) of the mesh model
     for (let fi=0; fi<m.faces.length; fi++)
     {
@@ -324,21 +369,39 @@ export default class NativeRasteriser implements IRasteriser
 
         // Vertex shader
         // Object.matrix -> world space
-        Matrix.transform(vertex, m.matrix, triworld[v]);
+        //Matrix.transform(vertex, m.matrix, triworld[v]);
 
         // View & Projection matrix -> screen
-        Matrix.transform(triworld[v], mat, triscreen[v]);
+
+        //Matrix.transform(triworld[v], mat, triscreen[v]);
+
+        Matrix.transform(vertex, transform, triworld[v]);
+
+        triscreen[v][0] =  triworld[v][0] * this.width + this.hwidth;
+        triscreen[v][1] = -triworld[v][1] * this.height + this.hheight;
+        triscreen[v][2] =  triworld[v][2];
 
         // Scale it onto display space
-        triscreen[v][0] =  triscreen[v][0] * this.width + this.hwidth;
-        triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
-        triscreen[v][2] =  triworld[v][2]; // Stuff world Z into screen coord
+        // triscreen[v][0] =  triscreen[v][0] * this.width + this.hwidth;
+        // triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
+        //triscreen[v][2] =  triworld[v][2];//triscreen[v][2]; // Stuff world Z into screen coord
       }
+
+      // console.log(
+      //   triscreen[0][2],
+      //   triscreen[1][2],
+      //   triscreen[2][2]
+      // )
 
       Vector3.sub(triworld[2], triworld[1], v1);
       Vector3.sub(triworld[1], triworld[0], v2);
       Vector3.cross(v1, v2, fnormal);
       Vector3.norm(fnormal, fnormal);
+
+      // let power = 1;
+      // draw regardless
+      // if (m.textures[0].ready)
+      //   this.tritex(triscreen, m.uvs[fi], power, m.textures[0]);
 
       let power = Vector3.dot(fnormal, light);
 

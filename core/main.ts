@@ -11,7 +11,7 @@ import Vector3                        from './Vector3';
 import Matrix                         from './Matrix';
 
 const INT32_SIZE_IN_BYTES = 4;
-const SCR_WIDTH = 800, SCR_HEIGHT = 600;
+const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 
 let w = new WasmLoader();
@@ -20,28 +20,20 @@ let s = new StatsGraph(StatsMode.FPS); // Performance monitoring
 let m = new Mesh();
 m.boxgeometry(1,1,1);
 
-let m2 = new Mesh();
-m2.boxgeometry(0.5,0.5,0.5);
-
+// let m2 = new Mesh();
+// m2.boxgeometry(0.5,0.5,0.5);
 
 let mprojection = Matrix.create(); // Camera -> Screen
 let mcamera     = Matrix.create(); // Duh
-let mrotatey    = Matrix.create(); // Object space rotation
-let mtranslate  = Matrix.create(); // Object position in world
 let mtransform  = Matrix.create(); // Concatenated transformation
 
 Matrix.perspective(45, SCR_WIDTH/SCR_HEIGHT, 0.01, 1.0, mprojection);
 Matrix.lookat([0,0,10], [0,0,0], [0,1,0], mcamera);
 
-// Matrix.rotationy(5, mrotatey);
-// Matrix.translate([0,0,0], mtranslate);
-//
-// Matrix.concat([mrotatey, mtranslate], m.matrix);
-
 m.set( [0,0,4], [0,0,0] );
-m2.set( [-0.9,0.2,4], [0,5,0] );
+// m2.set( [-0.9,-10.2,4], [0,5,0] );
 
-Matrix.concat([
+Matrix.concat([  
     mcamera, mprojection
 ], mtransform);
 
@@ -58,7 +50,7 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   let t = new Texture(wasm, "./img/radicrate.jpg");
 
   m.textures.push(t);
-  m2.textures.push(t);
+  // m2.textures.push(t);
 
   nraster.fill(32,0,128);
   nraster.rasterise(m, mtransform);
@@ -69,16 +61,16 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   function render()
   {
     s.begin();
-    ang += 3;
+    // ang += 1;
 
-    m.setrotation( [0,ang%360,0] );
-    m2.setrotation( [0,(ang*3)%360,0] );
+    m.setrotation( [0,(ang++)%360,0] );
+    // m2.setrotation( [0,(ang*3)%360,0] );
 
     //nraster.fill(32,0,128);
     nraster.fill(0,0,0);
 
     nraster.rasterise(m, mtransform);
-    nraster.rasterise(m2, mtransform);
+    //nraster.rasterise(m2, mtransform);
 
     device.flip();
 

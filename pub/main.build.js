@@ -127,7 +127,7 @@ class Matrix {
         let winv = (w != 0 && w != 1) ? 1 / w : 1;
         out[0] = x * winv;
         out[1] = y * winv;
-        out[2] = z * winv;
+        out[2] = z; // * winv;
     }
     // Simple translation matrix
     static translate(position, out) {
@@ -632,7 +632,7 @@ class NativeRasteriser {
         this.hheight = (h / 2) >> 0;
         this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_3__Sym__["a" /* BYTES_PER_PIXEL */];
         this.buffer = new Uint8ClampedArray(this.pagesize);
-        this.zbuffer = new Float32Array(w * h);
+        this.zbuffer = new Float64Array(w * h);
         this.ready = true;
     }
     begin() {
@@ -779,31 +779,54 @@ class NativeRasteriser {
         let texh = tex.height;
         let u = 0, v = 0;
         let r = 0, g = 0, b = 0;
+        let inv_p0z = 1 / points[0][2];
+        let inv_p1z = 1 / points[1][2];
+        let inv_p2z = 1 / points[2][2];
+        let inv_p0u = uvs[0][0] / points[0][2];
+        let inv_p1u = uvs[1][0] / points[1][2];
+        let inv_p2u = uvs[2][0] / points[2][2];
+        let inv_p0v = uvs[0][1] / points[0][2];
+        let inv_p1v = uvs[1][1] / points[1][2];
+        let inv_p2v = uvs[2][1] / points[2][2];
+        let inv_Pz = 0;
+        let inv_Pu = 0;
+        let inv_Pv = 0;
         // Scan a simple bbox
-        for (let y = miny; y <= maxy; y++) {
-            for (let x = minx; x <= maxx; x++) {
+        for (P[1] = miny; P[1] <= maxy; P[1]++) {
+            for (P[0] = minx; P[0] <= maxx; P[0]++) {
                 // barycentric is _all_ about Barry
                 // Can be massively optimised by unrolling this call
-                __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */].barycentric([x, y], points[0], points[1], points[2], o);
+                __WEBPACK_IMPORTED_MODULE_1__Vector2__["a" /* default */].barycentric(P, points[0], points[1], points[2], o);
                 // Check [0] first
                 if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
+                inv_Pz = inv_p0z * o[0] +
+                    inv_p1z * o[1] +
+                    inv_p2z * o[2];
+                inv_Pu = inv_p0u * o[0] +
+                    inv_p1u * o[1] +
+                    inv_p2u * o[2];
+                inv_Pv = inv_p0v * o[0] +
+                    inv_p1v * o[1] +
+                    inv_p2v * o[2];
                 // Depth test
-                let z = points[0][2] * o[0] +
-                    points[1][2] * o[1] +
-                    points[2][2] * o[2];
-                let zo = y * this.width + x;
+                // let z = points[0][2] * o[0] +
+                //         points[1][2] * o[1] +
+                //         points[2][2] * o[2];
+                let zo = P[1] * this.width + P[0];
                 // Pixel is behind existing, skip
-                if (this.zbuffer[zo] > z)
+                if (this.zbuffer[zo] > inv_Pz)
                     continue;
-                this.zbuffer[zo] = z;
-                let u = ((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2]) * texmaxu) >> 0;
-                let v = ((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2]) * texmaxv) >> 0;
+                this.zbuffer[zo] = inv_Pz;
+                // let u = ((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2] ) * texmaxu)>>0;
+                // let v = ((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2] ) * texmaxv)>>0;
+                u = ((inv_Pu / inv_Pz) * texmaxu) >> 0;
+                v = ((inv_Pv / inv_Pz) * texmaxv) >> 0;
                 let c = (v * texw << __WEBPACK_IMPORTED_MODULE_3__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_3__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]);
                 let r = texels[c + 0] * light;
                 let g = texels[c + 1] * light;
                 let b = texels[c + 2] * light;
-                this.pset(x, y, r, g, b);
+                this.pset(P[0], P[1], r, g, b);
             }
         }
     }
@@ -827,6 +850,10 @@ class NativeRasteriser {
         //   this.buffer[ o + 3 ] = 255;
         // }
     }
+    vertex_shader() {
+    }
+    fragment_shader() {
+    }
     rasterise(m, mat) {
         // Directional light
         let light = [0, 0, -1];
@@ -847,6 +874,8 @@ class NativeRasteriser {
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].create()
         ];
         let vertex;
+        let transform = __WEBPACK_IMPORTED_MODULE_4__Matrix__["a" /* default */].create();
+        __WEBPACK_IMPORTED_MODULE_4__Matrix__["a" /* default */].concat([m.matrix, mat], transform);
         // For each face (triangle) of the mesh model
         for (let fi = 0; fi < m.faces.length; fi++) {
             let f = m.faces[fi];
@@ -855,18 +884,31 @@ class NativeRasteriser {
                 vertex = m.vertices[f[v]];
                 // Vertex shader
                 // Object.matrix -> world space
-                __WEBPACK_IMPORTED_MODULE_4__Matrix__["a" /* default */].transform(vertex, m.matrix, triworld[v]);
+                //Matrix.transform(vertex, m.matrix, triworld[v]);
                 // View & Projection matrix -> screen
-                __WEBPACK_IMPORTED_MODULE_4__Matrix__["a" /* default */].transform(triworld[v], mat, triscreen[v]);
+                //Matrix.transform(triworld[v], mat, triscreen[v]);
+                __WEBPACK_IMPORTED_MODULE_4__Matrix__["a" /* default */].transform(vertex, transform, triworld[v]);
+                triscreen[v][0] = triworld[v][0] * this.width + this.hwidth;
+                triscreen[v][1] = -triworld[v][1] * this.height + this.hheight;
+                triscreen[v][2] = triworld[v][2];
                 // Scale it onto display space
-                triscreen[v][0] = triscreen[v][0] * this.width + this.hwidth;
-                triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
-                triscreen[v][2] = triworld[v][2]; // Stuff world Z into screen coord
+                // triscreen[v][0] =  triscreen[v][0] * this.width + this.hwidth;
+                // triscreen[v][1] = -triscreen[v][1] * this.height + this.hheight;
+                //triscreen[v][2] =  triworld[v][2];//triscreen[v][2]; // Stuff world Z into screen coord
             }
+            // console.log(
+            //   triscreen[0][2],
+            //   triscreen[1][2],
+            //   triscreen[2][2]
+            // )
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].sub(triworld[2], triworld[1], v1);
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].sub(triworld[1], triworld[0], v2);
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].cross(v1, v2, fnormal);
             __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].norm(fnormal, fnormal);
+            // let power = 1;
+            // draw regardless
+            // if (m.textures[0].ready)
+            //   this.tritex(triscreen, m.uvs[fi], power, m.textures[0]);
             let power = __WEBPACK_IMPORTED_MODULE_2__Vector3__["a" /* default */].dot(fnormal, light);
             //  console.log(power);
             // not visible
@@ -1081,27 +1123,21 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 const INT32_SIZE_IN_BYTES = 4;
-const SCR_WIDTH = 800, SCR_HEIGHT = 600;
+const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
 let s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].FPS); // Performance monitoring
 let m = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
 m.boxgeometry(1, 1, 1);
-let m2 = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
-m2.boxgeometry(0.5, 0.5, 0.5);
+// let m2 = new Mesh();
+// m2.boxgeometry(0.5,0.5,0.5);
 let mprojection = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Camera -> Screen
 let mcamera = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Duh
-let mrotatey = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Object space rotation
-let mtranslate = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Object position in world
 let mtransform = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Concatenated transformation
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].perspective(45, SCR_WIDTH / SCR_HEIGHT, 0.01, 1.0, mprojection);
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 10], [0, 0, 0], [0, 1, 0], mcamera);
-// Matrix.rotationy(5, mrotatey);
-// Matrix.translate([0,0,0], mtranslate);
-//
-// Matrix.concat([mrotatey, mtranslate], m.matrix);
 m.set([0, 0, 4], [0, 0, 0]);
-m2.set([-0.9, 0.2, 4], [0, 5, 0]);
+// m2.set( [-0.9,-10.2,4], [0,5,0] );
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([
     mcamera, mprojection
 ], mtransform);
@@ -1113,7 +1149,7 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     device.create();
     let t = new __WEBPACK_IMPORTED_MODULE_2__Texture__["a" /* default */](wasm, "./img/radicrate.jpg");
     m.textures.push(t);
-    m2.textures.push(t);
+    // m2.textures.push(t);
     nraster.fill(32, 0, 128);
     nraster.rasterise(m, mtransform);
     device.flip();
@@ -1121,9 +1157,9 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     var ang = 0;
     function render() {
         s.begin();
-        ang += 3;
-        m.setrotation([0, ang % 360, 0]);
-        m2.setrotation([0, (ang * 3) % 360, 0]);
+        // ang += 1;
+        m.setrotation([0, (ang++) % 360, 0]);
+        // m2.setrotation( [0,(ang*3)%360,0] );
         //nraster.fill(32,0,128);
         nraster.fill(0, 0, 0);
         nraster.rasterise(m, mtransform);
