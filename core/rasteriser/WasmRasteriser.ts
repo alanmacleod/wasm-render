@@ -1,5 +1,6 @@
 
 import IRasteriser          from './IRasteriser';
+import Texture              from '../Texture';
 import SharedMemory         from '../SharedMemory'
 import {WasmInstance}       from '../main.ext';
 import Mesh                 from '../mesh/Mesh';
@@ -69,8 +70,9 @@ export default class WasmRasteriser implements IRasteriser
     this.wasm._fill(this.rgbpack(r,g,b));
   }
 
-  rasterise(m: Mesh, mat:number[][])
+  public tri(points:number[][], uvs:number[][], light:number, tex: Texture): void
   {
 
   }
+
 }

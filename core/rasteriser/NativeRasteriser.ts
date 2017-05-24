@@ -21,7 +21,7 @@ export default class NativeRasteriser implements IRasteriser
   private hheight: number;
 
   // Use a SharedMemory?
-  private zbuffer: Float64Array;
+  private zbuffer: Float32Array;
 
   // IRasteriser members
   // TODO: Perhaps use Uint32 bytepack view for cleaner/faster/easier writes?
@@ -40,13 +40,13 @@ export default class NativeRasteriser implements IRasteriser
     this.height = h; this.hheight = (h/2)>>0;
     this.pagesize = w * h * BYTES_PER_PIXEL;
     this.buffer = new Uint8ClampedArray( this.pagesize );
-    this.zbuffer = new Float64Array( w * h );
+    this.zbuffer = new Float32Array( w * h );
     this.ready = true;
   }
 
   public begin()
   {
-
+    this.buffer.fill(0);
   }
 
   public end()
@@ -104,11 +104,8 @@ export default class NativeRasteriser implements IRasteriser
     }
   }
 
-  // Draw a triangle using a bbox with barycentric coord rejection
-  // Heard about this method recently, I always used the top/bottom half tri
-  // approach which I'm told is a little old school. I believe GPUs do it this
-  // way because it's easier to exec in parallel...
-  public tri(points:number[][], r:number, g:number, b:number, wireframe?:boolean): void
+  /* flat shaded tri for testing
+  public triflat(points:number[][], r:number, g:number, b:number, wireframe?:boolean): void
   {
     if (wireframe)
     {
@@ -171,6 +168,8 @@ export default class NativeRasteriser implements IRasteriser
 
   }
 
+  */
+
   // Draws a triangle in wireframe mode
   public wireframe(points:number[][])
   {
@@ -181,16 +180,28 @@ export default class NativeRasteriser implements IRasteriser
       this.line(
         a[0], a[1],     // point A
         b[0], b[1],     // point B
-        255, 255, 255,  // Colour
+        0, 0, 0,  // Colour
         true            // Clipping?
       );
     }
 
   }
 
+  // Draw a triangle using a bbox with barycentric coord rejection
+  // Heard about this method recently, I always used the top/bottom half tri
+  // approach which I'm told is a little old school. I believe GPUs do it this
+  // way because it's easier to exec in parallel...
 
-  public tritex(points:number[][], uvs:number[][], light:number, tex: Texture): void
+  public tri(points:number[][], uvs:number[][], light:number, tex: Texture): void
   {
+    // Texture hasn't loaded yet, draw an outline
+    // console.log(tex.ready);
+    if (!tex.ready)
+    {
+      this.wireframe(points);
+      return;
+    }
+
     // Get a bounding box from three points
     let minx:number = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
     let maxx:number = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
@@ -247,7 +258,7 @@ export default class NativeRasteriser implements IRasteriser
       for ( P[0]=minx; P[0]<=maxx; P[0]++ )
       {
         // barycentric is _all_ about Barry
-        // Can be massively optimised by unrolling this call
+        // Can be optimised by unrolling this call
         Vector2.barycentric(P, points[0], points[1], points[2], o);
 
         // Check [0] first
@@ -263,20 +274,14 @@ export default class NativeRasteriser implements IRasteriser
                   inv_p1v * o[1] +
                   inv_p2v * o[2];
 
-        // Depth test
-        // let z = points[0][2] * o[0] +
-        //         points[1][2] * o[1] +
-        //         points[2][2] * o[2];
         let zo = P[1] * this.width + P[0];
 
-        // Pixel is behind existing, skip
+        // Use 1/z depth test
         if (this.zbuffer[zo] > inv_Pz) continue;
 
         this.zbuffer[zo] = inv_Pz;
 
-        // let u = ((uvs[0][0] * o[0] + uvs[1][0] * o[1] + uvs[2][0] * o[2] ) * texmaxu)>>0;
-        // let v = ((uvs[0][1] * o[0] + uvs[1][1] * o[1] + uvs[2][1] * o[2] ) * texmaxv)>>0;
-
+        // Perspective correction
         u = ((inv_Pu / inv_Pz) * texmaxu)>>0;
         v = ((inv_Pv / inv_Pz) * texmaxv)>>0
 
@@ -303,31 +308,21 @@ export default class NativeRasteriser implements IRasteriser
 
   // Can be optimised by providing Int32 view into the same buffer and filling
   // with bytepack32 colour. Don't think I need this method at all though.
-  public fill(r:number, g:number, b:number): void
-  {
-    this.buffer.fill(0);
+  // public fill(r:number, g:number, b:number): void
+  // {
+  //   this.buffer.fill(0);
+  //
+  //   return;
+  //   // for (let o:number=0; o<this.pagesize; o+=4)
+  //   // {
+  //   //   this.buffer[ o + 0 ] = r;
+  //   //   this.buffer[ o + 1 ] = g;
+  //   //   this.buffer[ o + 2 ] = b;
+  //   //   this.buffer[ o + 3 ] = 255;
+  //   // }
+  // }
 
-    return;
-    // for (let o:number=0; o<this.pagesize; o+=4)
-    // {
-    //   this.buffer[ o + 0 ] = r;
-    //   this.buffer[ o + 1 ] = g;
-    //   this.buffer[ o + 2 ] = b;
-    //   this.buffer[ o + 3 ] = 255;
-    // }
-  }
-
-
-  public vertex_shader()
-  {
-
-  }
-
-  public fragment_shader()
-  {
-
-  }
-
+/*
   public rasterise(m: Mesh, mat:number[][])
   {
     // Directional light
@@ -413,23 +408,24 @@ export default class NativeRasteriser implements IRasteriser
 
       if (visible)
       {
+
         let drawflat = true;
 
         if (m.textures.length > 0)
         {
-          let whichtex = m.uvtextures[fi];
-          if (m.textures[whichtex].ready)
-          {
-            let uvs = m.uvs[fi];
+  //        let whichtex = m.uvtextures[fi];
+//          if (m.textures[whichtex].ready)
+      //    {
+            // let uvs =
             // this.tri(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, true);
-            this.tritex(triscreen, uvs, power, m.textures[whichtex]);
+            this.tri(triscreen, m.uvs[fi], power, m.textures[m.uvtextures[fi]]);
             drawflat = false;
             // return;
-          }
+    //      }
         }
 
         if (drawflat)
-          this.tri(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, true);
+          this.triflat(triscreen, (255 * power)>>0, (255 * power)>>0, (255 * power)>>0, true);
       }
 
       // if (m.textures.length > 0)
@@ -445,6 +441,6 @@ export default class NativeRasteriser implements IRasteriser
 
 
     }
-  }
+  }*/
 
 }

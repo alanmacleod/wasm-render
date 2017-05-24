@@ -7,7 +7,6 @@ import NativeRasteriser               from './rasteriser/NativeRasteriser';
 import WasmRasteriser                 from './rasteriser/WasmRasteriser';
 import {WasmInstance}                 from './main.ext';
 import Device                         from './Device';
-import Vector3                        from './Vector3';
 import Matrix                         from './Matrix';
 
 const INT32_SIZE_IN_BYTES = 4;
@@ -17,72 +16,64 @@ const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 let w = new WasmLoader();
 let s = new StatsGraph(StatsMode.FPS); // Performance monitoring
 
-let m = new Mesh();
-m.boxgeometry(1,1,1);
+// Create and position simple test object
+let box = new Mesh();
+box.boxgeometry( 1, 1, 1 );
+box.set( [0,0,4], [0,0,0] );
 
-// let m2 = new Mesh();
-// m2.boxgeometry(0.5,0.5,0.5);
-
+// Eye -> Screen matrices
 let mprojection = Matrix.create(); // Camera -> Screen
 let mcamera     = Matrix.create(); // Duh
 let mtransform  = Matrix.create(); // Concatenated transformation
 
-Matrix.perspective(45, SCR_WIDTH/SCR_HEIGHT, 0.01, 1.0, mprojection);
-Matrix.lookat([0,0,10], [0,0,0], [0,1,0], mcamera);
+Matrix.perspective( 45, SCR_WIDTH/SCR_HEIGHT, 0.01, 1.0, mprojection );
+Matrix.lookat( [0,0,10], [0,0,0], [0,1,0], mcamera );
 
-m.set( [0,0,4], [0,0,0] );
-// m2.set( [-0.9,-10.2,4], [0,5,0] );
+// Concatenate the above matrices for speed
+Matrix.concat( [mcamera, mprojection], mtransform );
 
-Matrix.concat([  
-    mcamera, mprojection
-], mtransform);
-
-
+// Load the WASM code over the wire
 w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 {
-  // Create a rasteriser
+  // Create the two rasterisers
   let nraster = new NativeRasteriser();
-  let wraster = new WasmRasteriser(wasm);
+  let wraster = new WasmRasteriser( wasm );
 
-  let device = new Device(SCR_WIDTH, SCR_HEIGHT, nraster);
+  // Load the texture here because the WASM instance is needed for SharedMem
+  let t = new Texture( wasm, "./img/radicrate.jpg" );
+  box.textures.push( t );
+
+  // The 'device' calls the rasterisers and handles the Canvas
+  let device = new Device( SCR_WIDTH, SCR_HEIGHT, nraster );
+
+  // Insert device Canvas into the DOM
   device.create();
 
-  let t = new Texture(wasm, "./img/radicrate.jpg");
-
-  m.textures.push(t);
-  // m2.textures.push(t);
-
-  nraster.fill(32,0,128);
-  nraster.rasterise(m, mtransform);
-  device.flip();
-
-  requestAnimationFrame(render);
+  requestAnimationFrame( render );
   var ang = 0;
+
+  // Main render loop
   function render()
   {
     s.begin();
-    // ang += 1;
 
-    m.setrotation( [0,(ang++)%360,0] );
-    // m2.setrotation( [0,(ang*3)%360,0] );
+    box.setrotation( [0, (ang+=2) % 360, 0] );
 
-    //nraster.fill(32,0,128);
-    nraster.fill(0,0,0);
-
-    nraster.rasterise(m, mtransform);
-    //nraster.rasterise(m2, mtransform);
-
+    device.clear();
+    device.render( box, mtransform );
     device.flip();
 
     s.end();
 
-    requestAnimationFrame(render);
+    requestAnimationFrame( render );
   }
 
 });
 
 
 /*
+// One of a few performance tests I ran. This one to test memory read/write.
+// Had others but didn't keep the code, don't cry.
 function runbenchmarks(wasm)
 {
   const bsize = 65536;

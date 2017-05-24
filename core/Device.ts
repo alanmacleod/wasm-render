@@ -3,6 +3,9 @@
 // Just abstracts the canvas crap
 // Accepts a Uint8 buffer for rendering
 
+import Mesh              from './mesh/Mesh';
+import Vector3           from './Vector3';
+import Matrix            from './Matrix';
 import IRasteriser       from './rasteriser/IRasteriser';
 import {BYTES_PER_PIXEL} from './Sym';
 
@@ -13,6 +16,8 @@ export default class Device
   private canvas: HTMLCanvasElement;
   private width: number;
   private height: number;
+  private hwidth: number;
+  private hheight: number;
   private imageData: ImageData;
   private rasteriser: IRasteriser;
   private bytes: number;
@@ -21,6 +26,8 @@ export default class Device
   {
     this.width = width;
     this.height = height;
+    this.hwidth = (width/2)>>0;
+    this.hheight = (height/2)>>0;
     this.rasteriser = rasteriser;
 
     this.rasteriser.init(width, height);
@@ -56,10 +63,9 @@ export default class Device
     this.rasteriser = rasteriser;
   }
 
-  public clear(colour:string = "#000000"): void
+  public clear(): void
   {
-    this.context.fillStyle = colour;
-    this.context.fillRect( 0, 0, this.width, this.height );
+    this.rasteriser.begin();
   }
 
   // Old school points for smiling at 'flip'
@@ -74,5 +80,75 @@ export default class Device
     this.rasteriser.end();
   }
 
+  // Renders a textured Mesh with zBuffer
+  public render(m: Mesh, mat:number[][]):void
+  {
+    // Directional light
+    let light = [0, 0, -1];
+    let saturation = 1.35;
+
+    // Initialise these outside the loop for normal/lighting calcs
+    let v1 = Vector3.create();
+    let v2 = Vector3.create();
+    let fnormal = Vector3.create();
+
+    // Rasterisation screen coordinates buffer
+    let triscreen = [
+      Vector3.create(),
+      Vector3.create(),
+      Vector3.create()
+    ];
+
+    // Triangle world coordinates for lighting, culling
+    let triworld = [
+      Vector3.create(),
+      Vector3.create(),
+      Vector3.create()
+    ];
+
+    let vertex;
+    let transform = Matrix.create();
+
+    Matrix.concat([m.matrix, mat], transform);
+
+    // For each face (triangle) of the mesh model
+    for (let fi=0; fi<m.faces.length; fi++)
+    {
+
+      let face = m.faces[fi];
+
+      // Transform each face's vertex into view space
+      for (let v=0; v<3; v++)
+      {
+        vertex = m.vertices[face[v]];
+
+        Matrix.transform(vertex, transform, triworld[v]);
+
+        triscreen[v][0] =  triworld[v][0] * this.width + this.hwidth;
+        triscreen[v][1] = -triworld[v][1] * this.height + this.hheight;
+        triscreen[v][2] =  triworld[v][2];
+      }
+
+      // Compute lighting & visibilty for this face
+      Vector3.sub(triworld[2], triworld[1], v1);
+      Vector3.sub(triworld[1], triworld[0], v2);
+      Vector3.cross(v1, v2, fnormal);
+      Vector3.norm(fnormal, fnormal);
+
+      let power = Vector3.dot(fnormal, light);
+
+      // Rasterise if visible etc
+      if (power > 0 && m.textures.length > 0)
+      {
+        // Call the rasteriser! JS || WASM
+        this.rasteriser.tri(
+          triscreen, m.uvs[fi], power * saturation,
+          m.textures[m.uvtextures[fi]]
+        );
+      }
+
+
+    }
+  }
 
 }

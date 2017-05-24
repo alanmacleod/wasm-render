@@ -13,8 +13,8 @@ export default class StatsGraph
     this.stats.showPanel( mode );
     this.stats.dom.style.position = "absolute";
     this.stats.dom.style.top = "5px";
-    this.stats.dom.style.right = "5px";
-    this.stats.dom.style.left = "";
+    // this.stats.dom.style.right = "5px";
+    this.stats.dom.style.left = "5px";
   }
 
   begin():void
