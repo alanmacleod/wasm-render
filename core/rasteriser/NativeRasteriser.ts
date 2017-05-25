@@ -44,6 +44,7 @@ export default class NativeRasteriser implements IRasteriser
     this.ready = true;
   }
 
+  public finish() {}
   public begin()
   {
     this.buffer.fill(0);

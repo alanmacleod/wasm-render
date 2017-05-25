@@ -327,7 +327,8 @@ class SharedMemory {
         this.size = sizebytes;
         this._heap = this.wasm._malloc(sizebytes);
         this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
-        this._buffer32 = new Int32Array(this._buffer);
+        // Note: us
+        this._buffer32 = new Int32Array(this.wasm.buffer, this._heap, this.size);
         return this.size;
     }
     // Blit `from` -> `.buffer`
@@ -347,7 +348,7 @@ class SharedMemory {
         return this._buffer;
     }
     get bufferi32() {
-        return null;
+        return this._buffer32;
     }
     // Return the heap pointer in WASM space (C funcs will need this)
     get pointer() {
@@ -414,6 +415,7 @@ class Device {
     }
     // Old school points for smiling at 'flip'
     flip() {
+        this.rasteriser.finish();
         if (!this.rasteriser.buffer)
             throw new ReferenceError("`rasteriser.buffer: Uint8ClampedArray` is required!");
         this.imageData.data.set(this.rasteriser.buffer);
@@ -479,7 +481,7 @@ class Device {
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return StatsMode; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__ = __webpack_require__(15);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__ = __webpack_require__(11);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__);
 
 class StatsGraph {
@@ -573,6 +575,7 @@ class WasmLoader {
     load(wasm) {
         let _wasm = wasm + ".wasm";
         let _imports = wasm + ".js";
+        console.log("Fetching " + _wasm);
         return new Promise((resolve, reject) => {
             // WASM not supported, end
             if (!('WebAssembly' in window)) {
@@ -590,7 +593,7 @@ class WasmLoader {
                 window.script.addEventListener('done', () => {
                     resolve(window.Module);
                 });
-                window.script.src = './wasm/test.js';
+                window.script.src = _imports; //'./wasm/test.js';
                 document.body.appendChild(window.script);
             });
         });
@@ -712,6 +715,7 @@ class NativeRasteriser {
         this.zbuffer = new Float32Array(w * h);
         this.ready = true;
     }
+    finish() { }
     begin() {
         this.buffer.fill(0);
     }
@@ -957,9 +961,18 @@ class WasmRasteriser {
     begin() {
         // Start a new task list
         this.taskno = 0;
+        this.framebuffer.buffer.fill(0);
+    }
+    finish() {
+        this.wasm._exec_jobs(this.taskno);
+        // console.log("Num tasks: ", this.taskno);
+        // console.log(this.taskbuffer.bufferi32[0]);
+        // console.log(this.wasm._exec_jobs(this.taskno));
     }
     end() {
         // Smash the arse off the rasteriser
+        // flush();
+        // console.log("WASM tasks: "+ this.taskno);
     }
     init(w, h) {
         this.width = w;
@@ -970,7 +983,7 @@ class WasmRasteriser {
         // Rasterisation jobs per frame
         this.taskbuffer = new __WEBPACK_IMPORTED_MODULE_0__SharedMemory__["a" /* default */](this.wasm, __WEBPACK_IMPORTED_MODULE_1__Sym__["c" /* MAX_WASM_TASKS_PER_FRAME */] * WASM_TASK_LENGTH);
         // Tell the WASM exports where to find the heap data and also pass dims
-        this.wasm._init(this.framebuffer.pointer, w, h);
+        this.wasm._init(this.framebuffer.pointer, w, h, this.taskbuffer.pointer);
         this.ready = true;
     }
     get buffer() {
@@ -991,9 +1004,16 @@ class WasmRasteriser {
         this.wasm._fill(this.rgbpack(r, g, b));
     }
     tri(points, uvs, light, tex) {
-        // add a job to the list
-        // We need to stuff the vertex data into a heap buffer before calling
-        // the C code
+        // No actual rasterisation done here, just buffering the calls to a single
+        // WASM call per frame
+        let offset = this.taskno * WASM_TASK_LENGTH;
+        let buff = this.taskbuffer.bufferi32;
+        for (let p of points) {
+            buff[offset + 0] = p[0];
+            buff[offset + 1] = p[1];
+            offset += 2;
+        }
+        this.taskno++;
     }
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = WasmRasteriser;
@@ -1001,267 +1021,7 @@ class WasmRasteriser {
 
 
 /***/ }),
-/* 11 */,
-/* 12 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(2);
-
-// Not convinced I need this class anywhere. Schedule for review/delete.
-const X = 0, Y = 1;
-class Vector2 {
-    constructor(x = 0, y = 0) {
-        this.x = x;
-        this.y = y;
-    }
-    add(b) {
-        return new Vector2(b.x + this.x, b.y + this.y);
-    }
-    sub(b) {
-        return new Vector2(this.x - b.x, this.y - b.y);
-    }
-    dot(b) {
-        return (this.x * b.x) + (this.y * b.y);
-    }
-    static barycentric(P, a, b, c, o) {
-        let va = [c[0] - a[0], b[0] - a[0], a[0] - P[0]];
-        let vb = [c[1] - a[1], b[1] - a[1], a[1] - P[1]];
-        let bc = [0, 0, 0];
-        __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */].cross(va, vb, bc);
-        // Outside
-        if (Math.abs(bc[2]) < 1) {
-            o[0] = -1;
-            o[1] = -1;
-            o[2] = -1;
-            return;
-        }
-        let iz = 1 / bc[2];
-        o[0] = 1.0 - (bc[0] + bc[1]) * iz;
-        o[1] = bc[1] * iz;
-        o[2] = bc[0] * iz;
-    }
-    barycentric(a, b, c) {
-        let va = [c.x - a.x, b.x - a.x, a.x - this.x];
-        let vb = [c.y - a.y, b.y - a.y, a.y - this.y];
-        let bc = [0, 0, 0];
-        __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */].cross(va, vb, bc);
-        if (Math.abs(bc[2]) < 1)
-            return [-1, 1, 1];
-        let iz = 1 / bc[2];
-        return [1.0 - (bc[0] + bc[1]) * iz, bc[1] * iz, bc[0] * iz];
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Vector2;
-
-
-
-/***/ }),
-/* 13 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__ = __webpack_require__(8);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__WasmLoader__ = __webpack_require__(7);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Texture__ = __webpack_require__(6);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__StatsGraph__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__ = __webpack_require__(9);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__ = __webpack_require__(10);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__Device__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__Matrix__ = __webpack_require__(1);
-
-
-
-
-
-
-
-
-const INT32_SIZE_IN_BYTES = 4;
-const SCR_WIDTH = 640, SCR_HEIGHT = 480;
-const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
-let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
-let s;
-// Create and position simple test object
-let box = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
-box.boxgeometry(1, 1, 1);
-box.set([0, 0, 4], [0, 0, 0]);
-// Eye -> Screen matrices
-let mprojection = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Camera -> Screen
-let mcamera = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Duh
-let mtransform = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Concatenated transformation
-__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].perspective(45, SCR_WIDTH / SCR_HEIGHT, 0.01, 1.0, mprojection);
-__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 10], [0, 0, 0], [0, 1, 0], mcamera);
-// Concatenate the above matrices for speed
-__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mcamera, mprojection], mtransform);
-// Load the WASM code over the wire
-w.load("./wasm/WasmRasteriser").then((wasm) => {
-    // Create the two rasterisers
-    let nraster = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__["a" /* default */]();
-    let wraster = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);
-    // Load the texture here because the WASM instance is needed for SharedMem
-    let t = new __WEBPACK_IMPORTED_MODULE_2__Texture__["a" /* default */](wasm, "./img/radicrate.jpg");
-    box.textures.push(t);
-    // The 'device' calls the rasterisers and handles the Canvas
-    let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, nraster);
-    device.create();
-    s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS, device.container, function () {
-        console.log("Click graph!");
-    });
-    // device.clear();
-    //
-    // for (let t=0; t< 100000; t++)
-    // {
-    //   wraster.pset(Math.random() * SCR_WIDTH, Math.random() * SCR_HEIGHT, 255, 0,0 );
-    // }
-    //
-    // // Insert device Canvas into the DOM
-    // device.flip();
-    //
-    //
-    // if (true == true) return; // stop linter/transpiler whinging  :/
-    requestAnimationFrame(render);
-    var ang = 0;
-    // Main render loop
-    function render() {
-        s.begin();
-        box.setrotation([0, (ang += 2) % 360, 0]);
-        device.clear();
-        device.render(box, mtransform);
-        device.flip();
-        s.end();
-        requestAnimationFrame(render);
-    }
-});
-/*
-// One of a few performance tests I ran. This one to test memory read/write.
-// Had others but didn't keep the code, don't cry.
-function runbenchmarks(wasm)
-{
-  const bsize = 65536;
-  const iterations = 5000;
-  let hm = wasm._malloc(bsize);
-  let wasmview = new Uint8Array(wasm.buffer, hm, bsize);
-  let realview = new Uint8Array(bsize);
-
-  let tstart = performance.now();
-  // write to buffer
-  for (let i=0; i<iterations; i++)
-  {
-    for (let o=0; o<bsize; o++)
-      wasmview[o] = 1;
-  }
-
-  let wasmtotal_write = performance.now() - tstart;
-
-  tstart = performance.now();
-  // write to buffer
-  for (let i=0; i<iterations; i++)
-  {
-    for (let o=0; o<bsize; o++)
-      realview[o] = 1;
-  }
-
-  let realtotal_write = performance.now() - tstart;
-
-  tstart = performance.now();
-  let v = 0;
-  // read
-  for (let i=0; i<iterations; i++)
-  {
-    for (let o=0; o<bsize; o++)
-      v = wasmview[o];
-  }
-
-  let wasmtotal_read = performance.now() - tstart;
-
-  tstart = performance.now();
-  v = 0;
-  // read
-  for (let i=0; i<iterations; i++)
-  {
-    for (let o=0; o<bsize; o++)
-      v = realview[o];
-  }
-
-  let realtotal_read = performance.now() - tstart;
-
-  console.log(`For ${iterations} WRITE iterations to ${bsize} bytes in WASM View took ${wasmtotal_write} ms`);
-  console.log(`For ${iterations} WRITE iterations to ${bsize} bytes in REAL View took ${realtotal_write} ms`);
-  console.log(`For ${iterations} READ iterations to ${bsize} bytes in WASM View took ${wasmtotal_read} ms`);
-  console.log(`For ${iterations} READ iterations to ${bsize} bytes in REAL View took ${realtotal_read} ms`);
-
-
-}
-*/
-
-
-/***/ }),
-/* 14 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-// Crusty old JS line routine I had lying around, cba to port to TS properly
-// Therein lies a strength/weakness with TS ... I don't have to.
-class Clip {
-    constructor() { }
-    static line(x1, y1, x2, y2, x_min, y_min, x_max, y_max) {
-        let [u1, u2] = [0.0, 1.0];
-        let line_out = { x0: 0, y0: 0, x1: 0, y1: 0, visible: false };
-        let delta_x = x2 - x1;
-        let delta_y = y2 - y1;
-        let p_part = [-1.0 * delta_x, delta_x, -1 * delta_y, delta_y];
-        let q_part = [x1 - x_min, x_max - x1, y1 - y_min, y_max - y1];
-        let accept = true;
-        for (let i = 0; i < 4; i++) {
-            let p = p_part[i];
-            let q = q_part[i];
-            if (p == 0.0 && q < 0.0) {
-                accept = false;
-                break;
-            }
-            let r = q / p;
-            if (p < 0)
-                u1 = Math.max(u1, r);
-            if (p > 0)
-                u2 = Math.min(u2, r);
-            if (u1 > u2) {
-                accept = false;
-                break;
-            }
-        }
-        if (accept) {
-            if (u2 < 1) {
-                x2 = x1 + u2 * delta_x;
-                y2 = y1 + u2 * delta_y;
-            }
-            if (u1 > 0) {
-                x1 += u1 * delta_x;
-                y1 += u1 * delta_y;
-            }
-            line_out.visible = true;
-            line_out.x0 = x1;
-            line_out.y0 = y1;
-            line_out.x1 = x2;
-            line_out.y1 = y2;
-        }
-        else {
-            line_out.visible = false;
-            line_out.x0 = -1.0;
-            line_out.y0 = -1.0;
-            line_out.x1 = -1.0;
-            line_out.y1 = -1.0;
-        }
-        return line_out;
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Clip;
-
-
-
-/***/ }),
-/* 15 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 (function (global, factory) {
@@ -1466,6 +1226,269 @@ class Clip {
 
 	return Stats;
 });
+
+/***/ }),
+/* 12 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(2);
+
+// Not convinced I need this class anywhere. Schedule for review/delete.
+const X = 0, Y = 1;
+class Vector2 {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+    }
+    add(b) {
+        return new Vector2(b.x + this.x, b.y + this.y);
+    }
+    sub(b) {
+        return new Vector2(this.x - b.x, this.y - b.y);
+    }
+    dot(b) {
+        return (this.x * b.x) + (this.y * b.y);
+    }
+    static barycentric(P, a, b, c, o) {
+        let va = [c[0] - a[0], b[0] - a[0], a[0] - P[0]];
+        let vb = [c[1] - a[1], b[1] - a[1], a[1] - P[1]];
+        let bc = [0, 0, 0];
+        __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */].cross(va, vb, bc);
+        // Outside
+        if (Math.abs(bc[2]) < 1) {
+            o[0] = -1;
+            o[1] = -1;
+            o[2] = -1;
+            return;
+        }
+        let iz = 1 / bc[2];
+        o[0] = 1.0 - (bc[0] + bc[1]) * iz;
+        o[1] = bc[1] * iz;
+        o[2] = bc[0] * iz;
+    }
+    barycentric(a, b, c) {
+        let va = [c.x - a.x, b.x - a.x, a.x - this.x];
+        let vb = [c.y - a.y, b.y - a.y, a.y - this.y];
+        let bc = [0, 0, 0];
+        __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */].cross(va, vb, bc);
+        if (Math.abs(bc[2]) < 1)
+            return [-1, 1, 1];
+        let iz = 1 / bc[2];
+        return [1.0 - (bc[0] + bc[1]) * iz, bc[1] * iz, bc[0] * iz];
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Vector2;
+
+
+
+/***/ }),
+/* 13 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__WasmLoader__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Texture__ = __webpack_require__(6);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__StatsGraph__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__ = __webpack_require__(9);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__Device__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__Matrix__ = __webpack_require__(1);
+
+
+
+
+
+
+
+
+const INT32_SIZE_IN_BYTES = 4;
+const SCR_WIDTH = 640, SCR_HEIGHT = 480;
+const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
+let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
+let s;
+// Create and position simple test object
+let box = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
+box.boxgeometry(1, 1, 1);
+box.set([0, 0, 4], [0, 0, 0]);
+// Eye -> Screen matrices
+let mprojection = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Camera -> Screen
+let mcamera = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Duh
+let mtransform = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Concatenated transformation
+__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].perspective(45, SCR_WIDTH / SCR_HEIGHT, 0.01, 1.0, mprojection);
+__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 10], [0, 0, 0], [0, 1, 0], mcamera);
+// Concatenate the above matrices for speed
+__WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mcamera, mprojection], mtransform);
+// Load the WASM code over the wire
+w.load("./wasm/WasmRasteriser").then((wasm) => {
+    // // Create the two rasterisers
+    let nraster = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__["a" /* default */]();
+    let wraster = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);
+    // Load the texture here because the WASM instance is needed for SharedMem
+    let t = new __WEBPACK_IMPORTED_MODULE_2__Texture__["a" /* default */](wasm, "./img/radicrate.jpg");
+    box.textures.push(t);
+    // The 'device' calls the rasterisers and handles the Canvas
+    let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, wraster);
+    device.create();
+    s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS, device.container, function () {
+        console.log("Click graph!");
+    });
+    // device.clear();
+    //
+    //
+    // // for (let t=0; t< 100000; t++)
+    // // {
+    // //   wraster.pset(Math.random() * SCR_WIDTH, Math.random() * SCR_HEIGHT, 255, 0,0 );
+    // // }
+    //
+    // wasm._exec_jobs(0);
+    //
+    // // Insert device Canvas into the DOM
+    // device.flip();
+    //
+    //
+    // if (true == true) return; // stop linter/transpiler whinging  :/
+    //
+    requestAnimationFrame(render);
+    var ang = 0;
+    // Main render loop
+    function render() {
+        s.begin();
+        box.setrotation([0, (ang += 2) % 360, 0]);
+        device.clear();
+        device.render(box, mtransform);
+        device.flip();
+        s.end();
+        requestAnimationFrame(render);
+    }
+});
+/*
+// One of a few performance tests I ran. This one to test memory read/write.
+// Had others but didn't keep the code, don't cry.
+function runbenchmarks(wasm)
+{
+  const bsize = 65536;
+  const iterations = 5000;
+  let hm = wasm._malloc(bsize);
+  let wasmview = new Uint8Array(wasm.buffer, hm, bsize);
+  let realview = new Uint8Array(bsize);
+
+  let tstart = performance.now();
+  // write to buffer
+  for (let i=0; i<iterations; i++)
+  {
+    for (let o=0; o<bsize; o++)
+      wasmview[o] = 1;
+  }
+
+  let wasmtotal_write = performance.now() - tstart;
+
+  tstart = performance.now();
+  // write to buffer
+  for (let i=0; i<iterations; i++)
+  {
+    for (let o=0; o<bsize; o++)
+      realview[o] = 1;
+  }
+
+  let realtotal_write = performance.now() - tstart;
+
+  tstart = performance.now();
+  let v = 0;
+  // read
+  for (let i=0; i<iterations; i++)
+  {
+    for (let o=0; o<bsize; o++)
+      v = wasmview[o];
+  }
+
+  let wasmtotal_read = performance.now() - tstart;
+
+  tstart = performance.now();
+  v = 0;
+  // read
+  for (let i=0; i<iterations; i++)
+  {
+    for (let o=0; o<bsize; o++)
+      v = realview[o];
+  }
+
+  let realtotal_read = performance.now() - tstart;
+
+  console.log(`For ${iterations} WRITE iterations to ${bsize} bytes in WASM View took ${wasmtotal_write} ms`);
+  console.log(`For ${iterations} WRITE iterations to ${bsize} bytes in REAL View took ${realtotal_write} ms`);
+  console.log(`For ${iterations} READ iterations to ${bsize} bytes in WASM View took ${wasmtotal_read} ms`);
+  console.log(`For ${iterations} READ iterations to ${bsize} bytes in REAL View took ${realtotal_read} ms`);
+
+
+}
+*/
+
+
+/***/ }),
+/* 14 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+// Crusty old JS line routine I had lying around, cba to port to TS properly
+// Therein lies a strength/weakness with TS ... I don't have to.
+class Clip {
+    constructor() { }
+    static line(x1, y1, x2, y2, x_min, y_min, x_max, y_max) {
+        let [u1, u2] = [0.0, 1.0];
+        let line_out = { x0: 0, y0: 0, x1: 0, y1: 0, visible: false };
+        let delta_x = x2 - x1;
+        let delta_y = y2 - y1;
+        let p_part = [-1.0 * delta_x, delta_x, -1 * delta_y, delta_y];
+        let q_part = [x1 - x_min, x_max - x1, y1 - y_min, y_max - y1];
+        let accept = true;
+        for (let i = 0; i < 4; i++) {
+            let p = p_part[i];
+            let q = q_part[i];
+            if (p == 0.0 && q < 0.0) {
+                accept = false;
+                break;
+            }
+            let r = q / p;
+            if (p < 0)
+                u1 = Math.max(u1, r);
+            if (p > 0)
+                u2 = Math.min(u2, r);
+            if (u1 > u2) {
+                accept = false;
+                break;
+            }
+        }
+        if (accept) {
+            if (u2 < 1) {
+                x2 = x1 + u2 * delta_x;
+                y2 = y1 + u2 * delta_y;
+            }
+            if (u1 > 0) {
+                x1 += u1 * delta_x;
+                y1 += u1 * delta_y;
+            }
+            line_out.visible = true;
+            line_out.x0 = x1;
+            line_out.y0 = y1;
+            line_out.x1 = x2;
+            line_out.y1 = y2;
+        }
+        else {
+            line_out.visible = false;
+            line_out.x0 = -1.0;
+            line_out.y0 = -1.0;
+            line_out.x1 = -1.0;
+            line_out.y1 = -1.0;
+        }
+        return line_out;
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Clip;
+
+
 
 /***/ })
 /******/ ]);

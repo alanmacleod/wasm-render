@@ -84,6 +84,8 @@ export default class Device
   // Old school points for smiling at 'flip'
   public flip(): void
   {
+    this.rasteriser.finish();
+
     if (!this.rasteriser.buffer)
       throw new ReferenceError("`rasteriser.buffer: Uint8ClampedArray` is required!");
 

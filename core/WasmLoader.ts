@@ -10,8 +10,11 @@ export default class WasmLoader
 
   load(wasm: string)
   {
+
     let _wasm = wasm + ".wasm";
     let _imports = wasm + ".js";
+
+    console.log("Fetching "+_wasm);
 
     return new Promise((resolve, reject) => {
 
@@ -38,7 +41,7 @@ export default class WasmLoader
           resolve((<any>window).Module);
         });
 
-        (<any>window).script.src = './wasm/test.js';
+        (<any>window).script.src = _imports;//'./wasm/test.js';
         document.body.appendChild((<any>window).script);
 
       });

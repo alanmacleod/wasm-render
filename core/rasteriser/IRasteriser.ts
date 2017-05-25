@@ -15,6 +15,7 @@ interface IRasteriser
   // Setup and tear-down methods called by Device every frame
   begin(): void;
   end(): void;
+  finish(): void;
 
   // rasterise( mesh:Mesh, matrix:number[][] ): void;
 }

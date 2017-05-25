@@ -10,10 +10,11 @@ export interface WasmInstance
   _malloc(size: number): number;
 
   // exports
- _init( heap_ptr:number, width:number, height:number ): void;
+ _init( heap_ptr:number, width:number, height:number, job_ptr: number ): void;
+ _exec_jobs( num_jobs:number ):void;
  _fill( val:number ): void;
  _vline( x:number, y1:number, y2:number, val:number ): void;
- _pset( x:number, y:number, val:number ): void;
+ _pset( x:number, y:number, val:number ): number;
 
   // heap
   buffer: ArrayBuffer;

@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include "vec3.h"
+// #include "vec3.h"
 #include "WasmRasteriser.h"
 
 #define BYTES_PER_PIXEL 4
@@ -17,9 +17,10 @@
           #include <emscripten/emscripten.h> */
 
 /* Function declarations, just to see at a glance what's in here */
-void init( unsigned int *, unsigned int, unsigned int );
+void init( unsigned int *, unsigned int, unsigned int, unsigned int * );
+void exec_jobs ( unsigned int );
 void fill( unsigned int );
-void pset( int, int, unsigned int val );
+int pset( int, int, unsigned int val );
 void vline( int, int, int, unsigned int );
 
 bool initialised = false;
@@ -31,24 +32,27 @@ unsigned int buffer_height      = 0;
 unsigned int buffer_num_pixels  = 0;
 unsigned int buffer_num_bytes   = 0;
 
-void testExtern()
-{
-  vec3 v0, v1, out;
+unsigned int *job_ptr = NULL;
 
-  v0.x = 1;
-  v0.y = 2;
-  v0.z = 3;
+// void testExtern()
+// {
+//   vec3 v0, v1, out;
+//
+//   v0.x = 1;
+//   v0.y = 2;
+//   v0.z = 3;
+//
+//   v1.x = 2;
+//   v1.y = 3;
+//   v1.z = 4;
+//
+//   vec3_add(v0, v1, out);
+// }
 
-  v1.x = 2;
-  v1.y = 3;
-  v1.z = 4;
-
-  vec3_add(v0, v1, out);
-}
-
-void init(unsigned int *buffer, unsigned int width, unsigned int height)
+void init(unsigned int *buffer, unsigned int width, unsigned int height, unsigned int *jobs)
 {
   heap_ptr = buffer;
+  job_ptr = jobs;
 
   buffer_width = width;
   buffer_height = height;
@@ -56,6 +60,29 @@ void init(unsigned int *buffer, unsigned int width, unsigned int height)
   buffer_num_bytes = buffer_num_pixels * BYTES_PER_PIXEL;
 
   initialised = true;
+}
+
+void exec_jobs(unsigned int num)
+{
+  int o = 0;
+  int x = 0, y = 0;
+  //
+  // for (y=0; y<buffer_width; y++)
+  // {
+  //   pset(y, y, 4278190080);
+  // }
+
+  // no "job type" header for now. Assume triangles in coord pairs (six int32s)
+  for (int i = 0; i< num; i++)
+  {
+    for (int p = 0; p<3; p++)
+    {
+      x = job_ptr[o++];
+      y = job_ptr[o++];
+      pset(x, y, 4278190080);
+    }
+  }
+
 }
 
 /* Horribly inefficient fill routine */
@@ -67,15 +94,17 @@ void fill(unsigned int val)
     heap_ptr[t] = val;
 }
 
-void pset(int x, int y, unsigned int val)
+int pset(int x, int y, unsigned int val)
 {
   // Quick reject test
-  if (x < 0) return;
-  if (y < 0) return;
-  if (x >= buffer_width) return;
-  if (y >= buffer_height) return;
+  if (x < 0) return 0;
+  if (y < 0) return 0;
+  if (x >= buffer_width) return 0;
+  if (y >= buffer_height) return 0;
 
   heap_ptr[ y * buffer_width + x ] = val;
+
+  return 29;
 }
 
 void vline(int x, int y1, int y2, unsigned int val)

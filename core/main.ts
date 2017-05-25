@@ -36,7 +36,7 @@ Matrix.concat( [mcamera, mprojection], mtransform );
 // Load the WASM code over the wire
 w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 {
-  // Create the two rasterisers
+  // // Create the two rasterisers
   let nraster = new NativeRasteriser();
   let wraster = new WasmRasteriser( wasm );
 
@@ -45,7 +45,7 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   box.textures.push( t );
 
   // The 'device' calls the rasterisers and handles the Canvas
-  let device = new Device( SCR_WIDTH, SCR_HEIGHT, nraster );
+  let device = new Device( SCR_WIDTH, SCR_HEIGHT, wraster );
   device.create();
 
   s = new StatsGraph(StatsMode.MS, device.container, function(){
@@ -55,17 +55,20 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 
   // device.clear();
   //
-  // for (let t=0; t< 100000; t++)
-  // {
-  //   wraster.pset(Math.random() * SCR_WIDTH, Math.random() * SCR_HEIGHT, 255, 0,0 );
-  // }
+  //
+  // // for (let t=0; t< 100000; t++)
+  // // {
+  // //   wraster.pset(Math.random() * SCR_WIDTH, Math.random() * SCR_HEIGHT, 255, 0,0 );
+  // // }
+  //
+  // wasm._exec_jobs(0);
   //
   // // Insert device Canvas into the DOM
   // device.flip();
   //
   //
   // if (true == true) return; // stop linter/transpiler whinging  :/
-
+  //
 
   requestAnimationFrame( render );
   var ang = 0;

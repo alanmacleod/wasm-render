@@ -12,7 +12,6 @@ const WASM_TASK_LENGTH = INT32 + INT32  // triangle point0 X, Y
                        + INT32 + INT32  // point1 X, Y
                        + INT32 + INT32; // point2 X, Y
 
-
 export default class WasmRasteriser implements IRasteriser
 {
   private wasm: WasmInstance;
@@ -39,11 +38,22 @@ export default class WasmRasteriser implements IRasteriser
   {
     // Start a new task list
     this.taskno = 0;
+    this.framebuffer.buffer.fill(0);
+  }
+  public finish()
+  {
+    this.wasm._exec_jobs(this.taskno);
+    // console.log("Num tasks: ", this.taskno);
+    // console.log(this.taskbuffer.bufferi32[0]);
+    // console.log(this.wasm._exec_jobs(this.taskno));
   }
 
   public end()
   {
     // Smash the arse off the rasteriser
+    // flush();
+
+    // console.log("WASM tasks: "+ this.taskno);
   }
 
   public init(w: number, h: number)
@@ -58,9 +68,8 @@ export default class WasmRasteriser implements IRasteriser
     // Rasterisation jobs per frame
     this.taskbuffer = new SharedMemory( this.wasm, MAX_WASM_TASKS_PER_FRAME * WASM_TASK_LENGTH );
 
-
     // Tell the WASM exports where to find the heap data and also pass dims
-    this.wasm._init( this.framebuffer.pointer, w, h );
+    this.wasm._init( this.framebuffer.pointer, w, h, this.taskbuffer.pointer );
 
     this.ready = true;
   }
@@ -94,11 +103,21 @@ export default class WasmRasteriser implements IRasteriser
 
   public tri(points:number[][], uvs:number[][], light:number, tex: Texture): void
   {
-    // add a job to the list
+    // No actual rasterisation done here, just buffering the calls to a single
+    // WASM call per frame
 
-    // We need to stuff the vertex data into a heap buffer before calling
-    // the C code
+    let offset = this.taskno * WASM_TASK_LENGTH;
+    let buff = this.taskbuffer.bufferi32;
 
+    for (let p of points)
+    {
+      buff[ offset + 0] = p[0];
+      buff[ offset + 1] = p[1];
+
+      offset += 2;
+    }
+
+    this.taskno++;
   }
 
 }

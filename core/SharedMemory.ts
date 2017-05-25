@@ -23,7 +23,9 @@ export default class SharedMemory
     this.size = sizebytes;
     this._heap = this.wasm._malloc(sizebytes);
     this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
-    this._buffer32 = new Int32Array(this._buffer);
+
+    // Note: us
+    this._buffer32 = new Int32Array(this.wasm.buffer, this._heap, this.size);
 
     return this.size;
   }
@@ -54,7 +56,7 @@ export default class SharedMemory
 
   get bufferi32(): Int32Array
   {
-    return null;
+    return this._buffer32;
   }
 
   // Return the heap pointer in WASM space (C funcs will need this)
