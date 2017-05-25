@@ -14,7 +14,8 @@ const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 
 let w = new WasmLoader();
-let s = new StatsGraph(StatsMode.FPS); // Performance monitoring
+let s;
+
 
 // Create and position simple test object
 let box = new Mesh();
@@ -45,9 +46,26 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 
   // The 'device' calls the rasterisers and handles the Canvas
   let device = new Device( SCR_WIDTH, SCR_HEIGHT, nraster );
-
-  // Insert device Canvas into the DOM
   device.create();
+
+  s = new StatsGraph(StatsMode.MS, device.container, function(){
+    console.log("Click graph!");
+  });
+
+
+  // device.clear();
+  //
+  // for (let t=0; t< 100000; t++)
+  // {
+  //   wraster.pset(Math.random() * SCR_WIDTH, Math.random() * SCR_HEIGHT, 255, 0,0 );
+  // }
+  //
+  // // Insert device Canvas into the DOM
+  // device.flip();
+  //
+  //
+  // if (true == true) return; // stop linter/transpiler whinging  :/
+
 
   requestAnimationFrame( render );
   var ang = 0;

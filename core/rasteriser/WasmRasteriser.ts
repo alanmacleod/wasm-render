@@ -1,11 +1,16 @@
 
-import IRasteriser          from './IRasteriser';
-import Texture              from '../Texture';
-import SharedMemory         from '../SharedMemory'
-import {WasmInstance}       from '../main.ext';
-import Mesh                 from '../mesh/Mesh';
-import {BYTES_PER_PIXEL,
-        ALPHA_MAGIC_NUMBER}  from '../Sym';
+import IRasteriser                  from './IRasteriser';
+import Texture                      from '../Texture';
+import SharedMemory                 from '../SharedMemory'
+import {WasmInstance}               from '../main.ext';
+import Mesh                         from '../mesh/Mesh';
+import {BYTES_PER_PIXEL, INT32,
+        ALPHA_MAGIC_NUMBER,
+        MAX_WASM_TASKS_PER_FRAME}   from '../Sym';
+
+const WASM_TASK_LENGTH = INT32 + INT32  // triangle point0 X, Y
+                       + INT32 + INT32  // point1 X, Y
+                       + INT32 + INT32; // point2 X, Y
 
 
 export default class WasmRasteriser implements IRasteriser
@@ -15,6 +20,11 @@ export default class WasmRasteriser implements IRasteriser
   private height:number;
   private pagesize:number;
 
+  // Single WASM call per frame, executes this raster job list:
+  private taskbuffer:SharedMemory;
+  private taskno:number;
+
+  // and rasterises into this:
   private framebuffer:SharedMemory;
 
   ready: boolean;
@@ -25,8 +35,16 @@ export default class WasmRasteriser implements IRasteriser
     this.ready = false;
   }
 
-  public begin(){}
-  public end(){}
+  public begin()
+  {
+    // Start a new task list
+    this.taskno = 0;
+  }
+
+  public end()
+  {
+    // Smash the arse off the rasteriser
+  }
 
   public init(w: number, h: number)
   {
@@ -36,6 +54,10 @@ export default class WasmRasteriser implements IRasteriser
 
     // Alocate some shared memory
     this.framebuffer = new SharedMemory( this.wasm, this.pagesize )
+
+    // Rasterisation jobs per frame
+    this.taskbuffer = new SharedMemory( this.wasm, MAX_WASM_TASKS_PER_FRAME * WASM_TASK_LENGTH );
+
 
     // Tell the WASM exports where to find the heap data and also pass dims
     this.wasm._init( this.framebuffer.pointer, w, h );
@@ -56,7 +78,7 @@ export default class WasmRasteriser implements IRasteriser
 
   public pset(x:number, y:number, r:number, g:number, b:number)
   {
-    this.wasm._pset(x, y, this.rgbpack(r,g,b));
+    this.wasm._pset(x<<0, y<<0, this.rgbpack(r,g,b));
   }
 
   public vline(x:number, y1:number, y2:number, r:number, g:number, b:number): void
@@ -72,6 +94,10 @@ export default class WasmRasteriser implements IRasteriser
 
   public tri(points:number[][], uvs:number[][], light:number, tex: Texture): void
   {
+    // add a job to the list
+
+    // We need to stuff the vertex data into a heap buffer before calling
+    // the C code
 
   }
 

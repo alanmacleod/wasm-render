@@ -75,11 +75,25 @@ const BYTES_PER_PIXEL = 4;
 /* harmony export (immutable) */ __webpack_exports__["a"] = BYTES_PER_PIXEL;
 
 const BIT_SHIFT_PER_PIXEL = 2;
-/* harmony export (immutable) */ __webpack_exports__["c"] = BIT_SHIFT_PER_PIXEL;
+/* harmony export (immutable) */ __webpack_exports__["e"] = BIT_SHIFT_PER_PIXEL;
  // e.g. texelU << 2
 // e.g. texelU << 2
 const ALPHA_MAGIC_NUMBER = 4278190080;
-/* harmony export (immutable) */ __webpack_exports__["b"] = ALPHA_MAGIC_NUMBER;
+/* harmony export (immutable) */ __webpack_exports__["d"] = ALPHA_MAGIC_NUMBER;
+
+const MAX_WASM_TASKS_PER_FRAME = 1000;
+/* harmony export (immutable) */ __webpack_exports__["c"] = MAX_WASM_TASKS_PER_FRAME;
+ // arbitrary really;
+// Byte sizes, should probably be machine words but whatevz
+// arbitrary really;
+const INT32 = 4, PTR32 = 4, FLOAT32 = 4, FLOAT64 = 8;
+/* harmony export (immutable) */ __webpack_exports__["b"] = INT32;
+
+/* unused harmony export PTR32 */
+
+/* unused harmony export FLOAT32 */
+
+/* unused harmony export FLOAT64 */
 
 
 
@@ -313,6 +327,7 @@ class SharedMemory {
         this.size = sizebytes;
         this._heap = this.wasm._malloc(sizebytes);
         this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
+        this._buffer32 = new Int32Array(this._buffer);
         return this.size;
     }
     // Blit `from` -> `.buffer`
@@ -330,6 +345,9 @@ class SharedMemory {
     // Return a ref to our buffer view into WASM space
     get buffer() {
         return this._buffer;
+    }
+    get bufferi32() {
+        return null;
     }
     // Return the heap pointer in WASM space (C funcs will need this)
     get pointer() {
@@ -362,6 +380,7 @@ class Device {
         this.hwidth = (width / 2) >> 0;
         this.hheight = (height / 2) >> 0;
         this.rasteriser = rasteriser;
+        this.container = null;
         this.rasteriser.init(width, height);
         this.bytes = width * height * __WEBPACK_IMPORTED_MODULE_2__Sym__["a" /* BYTES_PER_PIXEL */];
     }
@@ -369,13 +388,20 @@ class Device {
         let e = !(element) ? document.body :
             document.getElementById(element);
         let c = document.createElement('canvas');
+        this.container = document.createElement('div');
+        // this.container.style.backgroundColor = "#f0f";
+        this.container.style.width = this.width + "px";
+        this.container.style.height = this.height + "px";
+        this.container.style.position = "relative";
+        // this.container.style.border = "1px solid #d0d0d0";
+        this.container.appendChild(c);
         c.width = this.width;
         c.height = this.height;
         this.canvas = c;
         this.context = this.canvas.getContext('2d');
         // the actual pixel data
         this.imageData = this.context.getImageData(0, 0, this.width, this.height);
-        e.appendChild(c);
+        e.appendChild(this.container);
         this.clear();
     }
     use(rasteriser) {
@@ -453,18 +479,20 @@ class Device {
 
 "use strict";
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return StatsMode; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__ = __webpack_require__(11);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__ = __webpack_require__(15);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__);
 
 class StatsGraph {
-    constructor(mode = 1) {
-        this.stats = __WEBPACK_IMPORTED_MODULE_0__lib_stats_min_js__();
-        document.body.appendChild(this.stats.dom);
+    constructor(mode = 1, appendElement, clickHandler) {
+        this.stats = __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__(clickHandler);
+        let e = appendElement || document.body;
+        e.appendChild(this.stats.dom);
         this.stats.showPanel(mode);
         this.stats.dom.style.position = "absolute";
-        this.stats.dom.style.top = "5px";
+        this.stats.dom.style.top = '';
+        this.stats.dom.style.bottom = "0";
         // this.stats.dom.style.right = "5px";
-        this.stats.dom.style.left = "5px";
+        this.stats.dom.style.left = "30px";
     }
     begin() {
         this.stats.begin();
@@ -870,6 +898,7 @@ class NativeRasteriser {
                 // Check [0] first
                 if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
+                // Calc weighted values
                 inv_Pz = inv_p0z * o[0] +
                     inv_p1z * o[1] +
                     inv_p2z * o[2];
@@ -884,10 +913,10 @@ class NativeRasteriser {
                 if (this.zbuffer[zo] > inv_Pz)
                     continue;
                 this.zbuffer[zo] = inv_Pz;
-                // Perspective correction
+                // Divide u/z & v/z by 1/z to get perspective correct UV coords
                 u = ((inv_Pu / inv_Pz) * texmaxu) >> 0;
                 v = ((inv_Pv / inv_Pz) * texmaxv) >> 0;
-                let c = (v * texw << __WEBPACK_IMPORTED_MODULE_2__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_2__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]);
+                let c = (v * texw << __WEBPACK_IMPORTED_MODULE_2__Sym__["e" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_2__Sym__["e" /* BIT_SHIFT_PER_PIXEL */]);
                 let r = texels[c + 0] * light;
                 let g = texels[c + 1] * light;
                 let b = texels[c + 2] * light;
@@ -916,19 +945,30 @@ class NativeRasteriser {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Sym__ = __webpack_require__(0);
 
 
+const WASM_TASK_LENGTH = __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] // triangle point0 X, Y
+    + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] // point1 X, Y
+    + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */]; // point2 X, Y
+// point2 X, Y
 class WasmRasteriser {
     constructor(wasm) {
         this.wasm = wasm;
         this.ready = false;
     }
-    begin() { }
-    end() { }
+    begin() {
+        // Start a new task list
+        this.taskno = 0;
+    }
+    end() {
+        // Smash the arse off the rasteriser
+    }
     init(w, h) {
         this.width = w;
         this.height = h;
         this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_1__Sym__["a" /* BYTES_PER_PIXEL */];
         // Alocate some shared memory
         this.framebuffer = new __WEBPACK_IMPORTED_MODULE_0__SharedMemory__["a" /* default */](this.wasm, this.pagesize);
+        // Rasterisation jobs per frame
+        this.taskbuffer = new __WEBPACK_IMPORTED_MODULE_0__SharedMemory__["a" /* default */](this.wasm, __WEBPACK_IMPORTED_MODULE_1__Sym__["c" /* MAX_WASM_TASKS_PER_FRAME */] * WASM_TASK_LENGTH);
         // Tell the WASM exports where to find the heap data and also pass dims
         this.wasm._init(this.framebuffer.pointer, w, h);
         this.ready = true;
@@ -938,10 +978,10 @@ class WasmRasteriser {
     }
     rgbpack(r, g, b) {
         // little-endian bytepack: aaaaaaaa bbbbbbbb gggggggg rrrrrrrr
-        return __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* ALPHA_MAGIC_NUMBER */] + (b << 16) + (g << 8) + r;
+        return __WEBPACK_IMPORTED_MODULE_1__Sym__["d" /* ALPHA_MAGIC_NUMBER */] + (b << 16) + (g << 8) + r;
     }
     pset(x, y, r, g, b) {
-        this.wasm._pset(x, y, this.rgbpack(r, g, b));
+        this.wasm._pset(x << 0, y << 0, this.rgbpack(r, g, b));
     }
     vline(x, y1, y2, r, g, b) {
         this.wasm._vline(x, y1, y2, this.rgbpack(r, g, b));
@@ -951,6 +991,9 @@ class WasmRasteriser {
         this.wasm._fill(this.rgbpack(r, g, b));
     }
     tri(points, uvs, light, tex) {
+        // add a job to the list
+        // We need to stuff the vertex data into a heap buffer before calling
+        // the C code
     }
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = WasmRasteriser;
@@ -958,56 +1001,7 @@ class WasmRasteriser {
 
 
 /***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// stats.js - http://github.com/mrdoob/stats.js
-(function (f, e) {
-   true ? module.exports = e() : "function" === typeof define && define.amd ? define(e) : f.Stats = e();
-})(this, function () {
-  var f = function () {
-    function e(a) {
-      c.appendChild(a.dom);return a;
-    }function u(a) {
-      for (var d = 0; d < c.children.length; d++) c.children[d].style.display = d === a ? "block" : "none";l = a;
-    }var l = 0,
-        c = document.createElement("div");c.style.cssText = "position:fixed;top:0;left:0;cursor:pointer;opacity:0.9;z-index:10000";c.addEventListener("click", function (a) {
-      a.preventDefault();
-      u(++l % c.children.length);
-    }, !1);var k = (performance || Date).now(),
-        g = k,
-        a = 0,
-        r = e(new f.Panel("FPS", "#0ff", "#002")),
-        h = e(new f.Panel("MS", "#0f0", "#020"));if (self.performance && self.performance.memory) var t = e(new f.Panel("MB", "#f08", "#201"));u(0);return { REVISION: 16, dom: c, addPanel: e, showPanel: u, begin: function () {
-        k = (performance || Date).now();
-      }, end: function () {
-        a++;var c = (performance || Date).now();h.update(c - k, 200);if (c > g + 1E3 && (r.update(1E3 * a / (c - g), 100), g = c, a = 0, t)) {
-          var d = performance.memory;t.update(d.usedJSHeapSize / 1048576, d.jsHeapSizeLimit / 1048576);
-        }return c;
-      }, update: function () {
-        k = this.end();
-      }, domElement: c, setMode: u };
-  };f.Panel = function (e, f, l) {
-    var c = Infinity,
-        k = 0,
-        g = Math.round,
-        a = g(window.devicePixelRatio || 1),
-        r = 80 * a,
-        h = 48 * a,
-        t = 3 * a,
-        v = 2 * a,
-        d = 3 * a,
-        m = 15 * a,
-        n = 74 * a,
-        p = 30 * a,
-        q = document.createElement("canvas");q.width = r;q.height = h;q.style.cssText = "width:80px;height:48px";var b = q.getContext("2d");b.font = "bold " + 9 * a + "px Helvetica,Arial,sans-serif";b.textBaseline = "top";b.fillStyle = l;b.fillRect(0, 0, r, h);b.fillStyle = f;b.fillText(e, t, v);
-    b.fillRect(d, m, n, p);b.fillStyle = l;b.globalAlpha = .9;b.fillRect(d, m, n, p);return { dom: q, update: function (h, w) {
-        c = Math.min(c, h);k = Math.max(k, h);b.fillStyle = l;b.globalAlpha = 1;b.fillRect(0, 0, r, m);b.fillStyle = f;b.fillText(g(h) + " " + e + " (" + g(c) + "-" + g(k) + ")", t, v);b.drawImage(q, d + a, m, n - a, p, d, m, n - a, p);b.fillRect(d + n - a, m, a, p);b.fillStyle = l;b.globalAlpha = .9;b.fillRect(d + n - a, m, a, g((1 - h / w) * p));
-      } };
-  };return f;
-});
-
-/***/ }),
+/* 11 */,
 /* 12 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -1088,7 +1082,7 @@ const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
-let s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].FPS); // Performance monitoring
+let s;
 // Create and position simple test object
 let box = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
 box.boxgeometry(1, 1, 1);
@@ -1111,8 +1105,22 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     box.textures.push(t);
     // The 'device' calls the rasterisers and handles the Canvas
     let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, nraster);
-    // Insert device Canvas into the DOM
     device.create();
+    s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS, device.container, function () {
+        console.log("Click graph!");
+    });
+    // device.clear();
+    //
+    // for (let t=0; t< 100000; t++)
+    // {
+    //   wraster.pset(Math.random() * SCR_WIDTH, Math.random() * SCR_HEIGHT, 255, 0,0 );
+    // }
+    //
+    // // Insert device Canvas into the DOM
+    // device.flip();
+    //
+    //
+    // if (true == true) return; // stop linter/transpiler whinging  :/
     requestAnimationFrame(render);
     var ang = 0;
     // Main render loop
@@ -1251,6 +1259,213 @@ class Clip {
 /* harmony export (immutable) */ __webpack_exports__["a"] = Clip;
 
 
+
+/***/ }),
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
+
+(function (global, factory) {
+	 true ? module.exports = factory() : typeof define === 'function' && define.amd ? define(factory) : global.Stats = factory();
+})(this, function () {
+	'use strict';
+
+	/**
+  * @author mrdoob / http://mrdoob.com/
+  */
+
+	navigator.sayswho = function () {
+		var ua = navigator.userAgent,
+		    tem,
+		    M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+		if (/trident/i.test(M[1])) {
+			tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
+			return 'IE ' + (tem[1] || '');
+		}
+		if (M[1] === 'Chrome') {
+			tem = ua.match(/\b(OPR|Edge)\/(\d+)/);
+			if (tem != null) return tem.slice(1).join(' ').replace('OPR', 'Opera');
+		}
+		M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
+		if ((tem = ua.match(/version\/(\d+)/i)) != null) M.splice(1, 1, tem[1]);
+		return M.join(' ');
+	}();
+
+	var Stats = function (clickHandler) {
+
+		var mode = 0;
+
+		var container = document.createElement('div');
+		container.style.cssText = 'position:fixed;top:0;left:0;cursor:pointer;opacity:0.7;z-index:10000';
+		container.addEventListener('click', function (event) {
+
+			event.preventDefault();
+			showPanel(++mode % container.children.length);
+			if (clickHandler) clickHandler();
+		}, false);
+
+		//
+
+		function addPanel(panel) {
+
+			container.appendChild(panel.dom);
+			return panel;
+		}
+
+		function showPanel(id) {
+
+			for (var i = 0; i < container.children.length; i++) {
+
+				container.children[i].style.display = i === id ? 'block' : 'none';
+			}
+
+			mode = id;
+		}
+
+		//
+
+		var beginTime = (performance || Date).now(),
+		    prevTime = beginTime,
+		    frames = 0;
+
+		var fpsPanel = addPanel(new Stats.Panel('FPS', '#0ff', '#002'));
+		var msPanel = addPanel(new Stats.Panel('MS', '#000', '#060'));
+
+		if (self.performance && self.performance.memory) {
+
+			var memPanel = addPanel(new Stats.Panel('MB', '#f08', '#201'));
+		}
+
+		showPanel(0);
+
+		return {
+
+			REVISION: 16,
+
+			dom: container,
+
+			addPanel: addPanel,
+			showPanel: showPanel,
+
+			begin: function () {
+
+				beginTime = (performance || Date).now();
+			},
+
+			end: function () {
+
+				frames++;
+
+				var time = (performance || Date).now();
+
+				msPanel.update(time - beginTime, 200);
+
+				if (time > prevTime + 1000) {
+
+					fpsPanel.update(frames * 1000 / (time - prevTime), 100);
+
+					prevTime = time;
+					frames = 0;
+
+					if (memPanel) {
+
+						var memory = performance.memory;
+						memPanel.update(memory.usedJSHeapSize / 1048576, memory.jsHeapSizeLimit / 1048576);
+					}
+				}
+
+				return time;
+			},
+
+			update: function () {
+
+				beginTime = this.end();
+			},
+
+			// Backwards Compatibility
+
+			domElement: container,
+			setMode: showPanel
+
+		};
+	};
+
+	Stats.Panel = function (name, fg, bg) {
+
+		var system = navigator.sayswho;
+
+		var min = Infinity,
+		    max = 0,
+		    round = Math.round;
+		var PR = round(window.devicePixelRatio || 1);
+
+		var WIDTH = 8 * 80 * PR,
+		    HEIGHT = 2 * 48 * PR,
+		    TEXT_X = 6 * PR,
+		    TEXT_Y = 1 * PR,
+		    GRAPH_X = 3 * PR,
+		    GRAPH_Y = 15 * PR,
+		    GRAPH_WIDTH = 8 * 74 * PR,
+		    GRAPH_HEIGHT = 2 * 30 * PR;
+
+		var canvas = document.createElement('canvas');
+		canvas.width = WIDTH;
+		canvas.height = HEIGHT;
+		canvas.style.cssText = 'width:' + WIDTH + 'px;height:' + HEIGHT + 'px';
+
+		var context = canvas.getContext('2d');
+		context.font = 'bold ' + 15 * PR + 'px Helvetica,Arial,sans-serif';
+		context.textBaseline = 'top';
+
+		context.fillStyle = bg;
+		// context.fillRect( 0, 0, WIDTH, HEIGHT );
+
+		// context.globalAlpha = 1;
+		context.fillStyle = fg;
+		// context.fillText( name, TEXT_X, TEXT_Y );
+		//graph background
+		// context.fillRect( GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT );
+
+		context.fillStyle = '#ffffff'; //bg;
+		context.globalAlpha = 1; //0.9;
+		context.fillRect(GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT);
+
+		return {
+
+			dom: canvas,
+
+			update: function (value, maxValue) {
+
+				min = Math.min(min, value);
+				max = Math.max(max, value);
+
+				context.fillStyle = bg;
+				context.globalAlpha = 1;
+				// title bar
+				context.fillRect(GRAPH_X, GRAPH_HEIGHT + 15, GRAPH_WIDTH, GRAPH_Y + 3);
+
+				// title text
+				context.fillStyle = '#ffffff'; //fg
+				//let text = ' JavaScript ('+system+') frame time: ' + round( value ) + ' ' + name + ' (' + round( min ) + '-' + round( max ) + ')';
+				let text = ' JavaScript: ' + round(value) + ' ' + name;
+				context.fillText(text, TEXT_X, GRAPH_HEIGHT + 17);
+				context.fillStyle = fg;
+
+				// Shift the graph <--- left
+				context.drawImage(canvas, GRAPH_X + PR, GRAPH_Y, GRAPH_WIDTH - PR, GRAPH_HEIGHT, GRAPH_X, GRAPH_Y, GRAPH_WIDTH - PR, GRAPH_HEIGHT);
+
+				// context.fillStyle = bg;
+				context.fillRect(GRAPH_X + GRAPH_WIDTH - PR, GRAPH_Y, PR, GRAPH_HEIGHT);
+
+				context.fillStyle = '#ffffff'; //bg;
+				context.globalAlpha = 1;
+				context.fillRect(GRAPH_X + GRAPH_WIDTH - PR, GRAPH_Y, PR, round((1 - value / maxValue) * GRAPH_HEIGHT));
+			}
+
+		};
+	};
+
+	return Stats;
+});
 
 /***/ })
 /******/ ]);

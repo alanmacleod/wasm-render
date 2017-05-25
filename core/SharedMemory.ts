@@ -4,6 +4,7 @@ import {WasmInstance}   from './main.ext';
 export default class SharedMemory
 {
   private _buffer: Uint8ClampedArray;
+  private _buffer32: Int32Array;
   private _heap: number;         // *unsigned char pointer
   private wasm: WasmInstance;
   private size: number = 0;
@@ -22,6 +23,7 @@ export default class SharedMemory
     this.size = sizebytes;
     this._heap = this.wasm._malloc(sizebytes);
     this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
+    this._buffer32 = new Int32Array(this._buffer);
 
     return this.size;
   }
@@ -48,6 +50,11 @@ export default class SharedMemory
   get buffer(): Uint8ClampedArray
   {
     return this._buffer;
+  }
+
+  get bufferi32(): Int32Array
+  {
+    return null;
   }
 
   // Return the heap pointer in WASM space (C funcs will need this)

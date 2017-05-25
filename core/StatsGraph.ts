@@ -1,20 +1,22 @@
 
-import * as Stats       from '../lib/stats.min.js';
+import * as Stats       from '../lib/stats.mod.js';
 import {ThreeStats}     from './main.ext';
 
 export default class StatsGraph
 {
   private stats:ThreeStats;
 
-  constructor(mode:number = 1)
+  constructor(mode:number = 1, appendElement?:HTMLElement, clickHandler?:any)
   {
-    this.stats = Stats();
-    document.body.appendChild( this.stats.dom );
+    this.stats = Stats(clickHandler);
+    let e = appendElement || document.body;
+    e.appendChild( this.stats.dom );
     this.stats.showPanel( mode );
     this.stats.dom.style.position = "absolute";
-    this.stats.dom.style.top = "5px";
+    this.stats.dom.style.top = '';
+    this.stats.dom.style.bottom = "0";
     // this.stats.dom.style.right = "5px";
-    this.stats.dom.style.left = "5px";
+    this.stats.dom.style.left = "30px";
   }
 
   begin():void

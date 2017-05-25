@@ -21,6 +21,7 @@ export default class Device
   private imageData: ImageData;
   private rasteriser: IRasteriser;
   private bytes: number;
+  public container: HTMLElement;
 
   constructor(width: number, height: number, rasteriser: IRasteriser)
   {
@@ -29,6 +30,7 @@ export default class Device
     this.hwidth = (width/2)>>0;
     this.hheight = (height/2)>>0;
     this.rasteriser = rasteriser;
+    this.container = null;
 
     this.rasteriser.init(width, height);
     this.bytes = width * height * BYTES_PER_PIXEL;
@@ -41,6 +43,17 @@ export default class Device
 
     let c:HTMLCanvasElement = document.createElement( 'canvas' );
 
+    this.container = document.createElement('div');
+
+    // this.container.style.backgroundColor = "#f0f";
+    this.container.style.width = this.width+"px";
+    this.container.style.height = this.height+"px";
+    this.container.style.position = "relative";
+    // this.container.style.border = "1px solid #d0d0d0";
+
+
+    this.container.appendChild(c);
+
     c.width = this.width;
     c.height = this.height;
 
@@ -50,7 +63,7 @@ export default class Device
     // the actual pixel data
     this.imageData = this.context.getImageData( 0, 0, this.width, this.height );
 
-    e.appendChild( c );
+    e.appendChild( this.container );
 
     this.clear();
   }

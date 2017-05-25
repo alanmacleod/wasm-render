@@ -259,18 +259,19 @@ export default class NativeRasteriser implements IRasteriser
       {
         // barycentric is _all_ about Barry
         // Can be optimised by unrolling this call
-        Vector2.barycentric(P, points[0], points[1], points[2], o);
+        Vector2.barycentric( P, points[0], points[1], points[2], o );
 
         // Check [0] first
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
-        inv_Pz =  inv_p0z * o[0] +
+        // Calc weighted values
+        inv_Pz =  inv_p0z * o[0] +    // 1/z
                   inv_p1z * o[1] +
                   inv_p2z * o[2];
-        inv_Pu =  inv_p0u * o[0] +
+        inv_Pu =  inv_p0u * o[0] +    // u/z
                   inv_p1u * o[1] +
                   inv_p2u * o[2];
-        inv_Pv =  inv_p0v * o[0] +
+        inv_Pv =  inv_p0v * o[0] +    // v/z
                   inv_p1v * o[1] +
                   inv_p2v * o[2];
 
@@ -281,11 +282,11 @@ export default class NativeRasteriser implements IRasteriser
 
         this.zbuffer[zo] = inv_Pz;
 
-        // Perspective correction
+        // Divide u/z & v/z by 1/z to get perspective correct UV coords
         u = ((inv_Pu / inv_Pz) * texmaxu)>>0;
         v = ((inv_Pv / inv_Pz) * texmaxv)>>0
 
-        let c = (v * texw << BIT_SHIFT_PER_PIXEL) + (u << BIT_SHIFT_PER_PIXEL);
+        let c = (v * texw << BIT_SHIFT_PER_PIXEL) + ( u << BIT_SHIFT_PER_PIXEL );
         let r = texels[ c+0 ] * light;
         let g = texels[ c+1 ] * light;
         let b = texels[ c+2 ] * light;
