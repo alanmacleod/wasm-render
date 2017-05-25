@@ -53,23 +53,6 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   });
 
 
-  // device.clear();
-  //
-  //
-  // // for (let t=0; t< 100000; t++)
-  // // {
-  // //   wraster.pset(Math.random() * SCR_WIDTH, Math.random() * SCR_HEIGHT, 255, 0,0 );
-  // // }
-  //
-  // wasm._exec_jobs(0);
-  //
-  // // Insert device Canvas into the DOM
-  // device.flip();
-  //
-  //
-  // if (true == true) return; // stop linter/transpiler whinging  :/
-  //
-
   requestAnimationFrame( render );
   var ang = 0;
 
@@ -85,7 +68,7 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
     device.flip();
 
     s.end();
-
+    // if (ang < 10)
     requestAnimationFrame( render );
   }
 

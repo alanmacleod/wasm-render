@@ -1,5 +1,5 @@
 
-import Mesh     from '../mesh/Mesh';
+// import Mesh     from '../mesh/Mesh';
 import Texture  from '../Texture';
 
 interface IRasteriser
@@ -14,10 +14,8 @@ interface IRasteriser
 
   // Setup and tear-down methods called by Device every frame
   begin(): void;
-  end(): void;
   finish(): void;
-
-  // rasterise( mesh:Mesh, matrix:number[][] ): void;
+  end(): void;
 }
 
 export default IRasteriser;

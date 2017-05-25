@@ -952,7 +952,7 @@ class NativeRasteriser {
 const WASM_TASK_LENGTH = __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] // triangle point0 X, Y
     + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] // point1 X, Y
     + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */]; // point2 X, Y
-// point2 X, Y
+const WASM_TASK_ELEMENTS = 6;
 class WasmRasteriser {
     constructor(wasm) {
         this.wasm = wasm;
@@ -964,14 +964,13 @@ class WasmRasteriser {
         this.framebuffer.buffer.fill(0);
     }
     finish() {
+        // Smash the arse off the C rasteriser
+        // if (this.taskno == 4)
+        //   console.log(this.taskbuffer.bufferi32);
         this.wasm._exec_jobs(this.taskno);
-        // console.log("Num tasks: ", this.taskno);
-        // console.log(this.taskbuffer.bufferi32[0]);
-        // console.log(this.wasm._exec_jobs(this.taskno));
     }
     end() {
-        // Smash the arse off the rasteriser
-        // flush();
+        // clear z-buffer
         // console.log("WASM tasks: "+ this.taskno);
     }
     init(w, h) {
@@ -1005,12 +1004,17 @@ class WasmRasteriser {
     }
     tri(points, uvs, light, tex) {
         // No actual rasterisation done here, just buffering the calls to a single
-        // WASM call per frame
-        let offset = this.taskno * WASM_TASK_LENGTH;
+        // WASM call stack per frame
+        if (this.taskno >= __WEBPACK_IMPORTED_MODULE_1__Sym__["c" /* MAX_WASM_TASKS_PER_FRAME */]) {
+            console.warn("Out of task buffer space!");
+            return;
+        }
+        let offset = this.taskno * WASM_TASK_ELEMENTS;
         let buff = this.taskbuffer.bufferi32;
-        for (let p of points) {
-            buff[offset + 0] = p[0];
-            buff[offset + 1] = p[1];
+        for (let p = 0; p < points.length; p++) {
+            let point = points[p];
+            buff[offset + 0] = point[0];
+            buff[offset + 1] = point[1];
             offset += 2;
         }
         this.taskno++;
@@ -1257,9 +1261,9 @@ class Vector2 {
         __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */].cross(va, vb, bc);
         // Outside
         if (Math.abs(bc[2]) < 1) {
-            o[0] = -1;
-            o[1] = -1;
-            o[2] = -1;
+            o[0] = -1.0;
+            o[1] = -1.0;
+            o[2] = -1.0;
             return;
         }
         let iz = 1 / bc[2];
@@ -1335,22 +1339,6 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS, device.container, function () {
         console.log("Click graph!");
     });
-    // device.clear();
-    //
-    //
-    // // for (let t=0; t< 100000; t++)
-    // // {
-    // //   wraster.pset(Math.random() * SCR_WIDTH, Math.random() * SCR_HEIGHT, 255, 0,0 );
-    // // }
-    //
-    // wasm._exec_jobs(0);
-    //
-    // // Insert device Canvas into the DOM
-    // device.flip();
-    //
-    //
-    // if (true == true) return; // stop linter/transpiler whinging  :/
-    //
     requestAnimationFrame(render);
     var ang = 0;
     // Main render loop
@@ -1361,6 +1349,7 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
         device.render(box, mtransform);
         device.flip();
         s.end();
+        // if (ang < 10)
         requestAnimationFrame(render);
     }
 });

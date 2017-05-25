@@ -11,6 +11,7 @@ import {BYTES_PER_PIXEL, INT32,
 const WASM_TASK_LENGTH = INT32 + INT32  // triangle point0 X, Y
                        + INT32 + INT32  // point1 X, Y
                        + INT32 + INT32; // point2 X, Y
+const WASM_TASK_ELEMENTS = 6;
 
 export default class WasmRasteriser implements IRasteriser
 {
@@ -42,17 +43,15 @@ export default class WasmRasteriser implements IRasteriser
   }
   public finish()
   {
+    // Smash the arse off the C rasteriser
+    // if (this.taskno == 4)
+    //   console.log(this.taskbuffer.bufferi32);
     this.wasm._exec_jobs(this.taskno);
-    // console.log("Num tasks: ", this.taskno);
-    // console.log(this.taskbuffer.bufferi32[0]);
-    // console.log(this.wasm._exec_jobs(this.taskno));
   }
 
   public end()
   {
-    // Smash the arse off the rasteriser
-    // flush();
-
+    // clear z-buffer
     // console.log("WASM tasks: "+ this.taskno);
   }
 
@@ -104,15 +103,22 @@ export default class WasmRasteriser implements IRasteriser
   public tri(points:number[][], uvs:number[][], light:number, tex: Texture): void
   {
     // No actual rasterisation done here, just buffering the calls to a single
-    // WASM call per frame
+    // WASM call stack per frame
 
-    let offset = this.taskno * WASM_TASK_LENGTH;
+    if (this.taskno >= MAX_WASM_TASKS_PER_FRAME)
+    {
+      console.warn("Out of task buffer space!");
+      return;
+    }
+
+    let offset = this.taskno * WASM_TASK_ELEMENTS;
     let buff = this.taskbuffer.bufferi32;
 
-    for (let p of points)
+    for (let p=0; p<points.length; p++)
     {
-      buff[ offset + 0] = p[0];
-      buff[ offset + 1] = p[1];
+      let point = points[p];
+      buff[ offset + 0] = point[0];
+      buff[ offset + 1] = point[1];
 
       offset += 2;
     }

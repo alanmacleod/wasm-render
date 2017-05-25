@@ -43,7 +43,7 @@ export default class Vector2
     // Outside
     if (Math.abs(bc[ 2 ]) < 1)
     {
-      o[0] = -1; o[1] = -1; o[2] = -1;
+      o[0] = -1.0; o[1] = -1.0; o[2] = -1.0;
       return;
     }
 
