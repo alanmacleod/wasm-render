@@ -115,7 +115,7 @@ export default class NativeRasteriser implements IRasteriser
     }
 
     // Get a bounding box from three points
-    let minx:number = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
+    let minx:number = Math.min(points[0][0], Math.min=(points[1][0], points[2][0]));
     let maxx:number = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
     let miny:number = Math.min(points[0][1], Math.min(points[1][1], points[2][1]));
     let maxy:number = Math.max(points[0][1], Math.max(points[1][1], points[2][1]));

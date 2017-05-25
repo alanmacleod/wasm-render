@@ -11,12 +11,12 @@
 
 #define BYTES_PER_PIXEL 4
 
-/* IMPORT NOTE: printf() from here *ONLY WORKS IF* you include a
-                newline escape char '\n' in the string otherwise its ignored!
-                                                                            */
+/* IMPORTANT NOTE: printf() from here (to browser console) *ONLY WORKS IF* you
+                include a newline escape char '\n' in the string otherwise
+                it's ignored! */
 
-/* NOTE:  Some guides insisted I need this declaration:
-          EMSCRIPTEN_KEEPALIVE; for all my exported functions but that
+/* NOTE:  Some guides insisted I need this typedef declaration:
+          EMSCRIPTEN_KEEPALIVE; on all my exported functions but that
           doesn't seem to be the case upon testing
           #include <emscripten/emscripten.h> */
 
@@ -27,6 +27,8 @@ void tri (int, int, int, int, int, int);
 void fill( unsigned int );
 int pset( int, int, unsigned int val );
 void vline( int, int, int, unsigned int );
+void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
+                              int cx, int cy, float *o0, float *o1, float* o2);
 
 bool initialised = false;
 
@@ -72,6 +74,22 @@ void exec_jobs(unsigned int num)
   int o = 0;
   int x = 0, y = 0;
   int p0x,  p0y,  p1x,  p1y,  p2x,  p2y;
+
+  // float o0, o1, o2;
+  //
+  // // barycentric(
+  // //   10, 10,
+  // //   0, 0,
+  // //   100, 0,
+  // //   0, 100,
+  // //   &o0, &o1, &o2
+  // // );
+  // //
+  // // // printf("%f, %f, %f \n", o0, o1, o2);
+  // //
+  // // return;
+  // //
+
   //
   // for (y=0; y<buffer_width; y++)
   // {
@@ -136,11 +154,11 @@ void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
     return;
   }
 
-  float iz = 1 / bc2;
+  float iz = 1 / (float)bc2;
 
   *o0 = 1.0 - ((float)(bc0 + bc1)) * iz;
-  *o1 = (float)bc1 * iz;
-  *o2 = (float)bc0 * iz;
+  *o1 = ((float)bc1) * iz;
+  *o2 = ((float)bc0) * iz;
 }
 
 void tri(int p0x, int p0y, int p1x, int p1y, int p2x, int p2y)
@@ -162,6 +180,8 @@ void tri(int p0x, int p0y, int p1x, int p1y, int p2x, int p2y)
   if (minx >= buffer_width) return;
   if (miny >= buffer_height) return;
 
+  // WORKS till here
+
   float o0=0, o1=0, o2=0;
   int x, y;
 
@@ -179,9 +199,6 @@ void tri(int p0x, int p0y, int p1x, int p1y, int p2x, int p2y)
 
       if (o0 < 0 || o1 < 0 || o2 < 0)
         continue;
-
-      if (cwhatever++ < maxwhatever)
-        printf("%f, %f, %f \n", o0, o1, o2);
 
       pset(x, y, 4278190080 + 255);
 

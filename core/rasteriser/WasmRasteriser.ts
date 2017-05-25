@@ -123,6 +123,7 @@ export default class WasmRasteriser implements IRasteriser
       offset += 2;
     }
 
+
     this.taskno++;
   }
 

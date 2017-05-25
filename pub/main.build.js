@@ -770,7 +770,7 @@ class NativeRasteriser {
       }
   
       // Get a bounding box from three points
-      let minx:number = Math.min(points[0][0], Math.min(points[1][0], points[2][0]));
+      let minx:number = Math.min(points[0][0], Math.min=(points[1][0], points[2][0]));
       let maxx:number = Math.max(points[0][0], Math.max(points[1][0], points[2][0]));
       let miny:number = Math.min(points[0][1], Math.min(points[1][1], points[2][1]));
       let maxy:number = Math.max(points[0][1], Math.max(points[1][1], points[2][1]));
@@ -1267,6 +1267,7 @@ class Vector2 {
             return;
         }
         let iz = 1 / bc[2];
+        console.log(iz);
         o[0] = 1.0 - (bc[0] + bc[1]) * iz;
         o[1] = bc[1] * iz;
         o[2] = bc[0] * iz;
@@ -1327,6 +1328,17 @@ __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 10], [0, 
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mcamera, mprojection], mtransform);
 // Load the WASM code over the wire
 w.load("./wasm/WasmRasteriser").then((wasm) => {
+    //   let o = [0,0,0];
+    //   Vector2.barycentric(
+    //     [10, 10], // P
+    //     [0,0], // A
+    //     [100, 0], // B
+    //     [0, 100], // C
+    //     o
+    //   );
+    //
+    // wasm._exec_jobs(0);
+    //   if (true) return;
     // // Create the two rasterisers
     let nraster = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__["a" /* default */]();
     let wraster = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);

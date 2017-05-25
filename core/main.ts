@@ -8,6 +8,7 @@ import WasmRasteriser                 from './rasteriser/WasmRasteriser';
 import {WasmInstance}                 from './main.ext';
 import Device                         from './Device';
 import Matrix                         from './Matrix';
+import Vector2                        from './Vector2';
 
 const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
@@ -36,6 +37,18 @@ Matrix.concat( [mcamera, mprojection], mtransform );
 // Load the WASM code over the wire
 w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 {
+//   let o = [0,0,0];
+//   Vector2.barycentric(
+//     [10, 10], // P
+//     [0,0], // A
+//     [100, 0], // B
+//     [0, 100], // C
+//     o
+//   );
+//
+// wasm._exec_jobs(0);
+//   if (true) return;
+
   // // Create the two rasterisers
   let nraster = new NativeRasteriser();
   let wraster = new WasmRasteriser( wasm );
