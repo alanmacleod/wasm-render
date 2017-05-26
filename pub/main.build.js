@@ -103,258 +103,7 @@ const INT32 = 4, PTR32 = 4, FLOAT32 = 4, FLOAT64 = 8;
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-// Vector3.ts
-//        offers static overloads operating on simple arrays for speed
-// Passing the `out` by reference instead of creating & returning `out`
-// is literally twice the speed (Chrome 58). As it always was in the C dayssss
-// So, doing it like this with using TypeScript's static and overload options.
-// Garbage collector takin' it easy too.
-class Vector3 {
-    constructor(x = 0, y = 0, z = 0) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-    // Static Methods ///////////////////////////////////////////////////////////
-    static create(a, b, c) {
-        return [a || 0, b || 0, c || 0];
-    }
-    static add(a, b, out) {
-        out[0] = a[0] + b[0];
-        out[1] = a[1] + b[1];
-        out[2] = a[2] + b[2];
-    }
-    static sub(a, b, out) {
-        out[0] = a[0] - b[0];
-        out[1] = a[1] - b[1];
-        out[2] = a[2] - b[2];
-    }
-    static mul(a, s, out) {
-        out[0] = a[0] * s;
-        out[1] = a[1] * s;
-        out[2] = a[2] * s;
-    }
-    static div(a, d, out) {
-        let id = 1 / d;
-        out[0] = a[0] * id;
-        out[1] = a[1] * id;
-        out[2] = a[2] * id;
-    }
-    static norm(v, out) {
-        let m = Vector3.mag(v);
-        if (m == 0)
-            out = [];
-        else
-            [out[0], out[1], out[2]] = [v[0] / m, v[1] / m, v[2] / m];
-    }
-    static mag(v) {
-        return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-    }
-    static dot(a, b) {
-        return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
-    }
-    static cross(a, b, out) {
-        out[0] = a[1] * b[2] - a[2] * b[1];
-        out[1] = a[2] * b[0] - a[0] * b[2];
-        out[2] = a[0] * b[1] - a[1] * b[0];
-    }
-    // Instance Methods /////////////////////////////////////////////////////////
-    add(b) {
-        return new Vector3(this.x + b.x, this.y + b.y, this.z + b.z);
-    }
-    sub(b) {
-        return new Vector3(this.x - b.x, this.y - b.y, this.z - b.z);
-    }
-    norm() {
-        let m = this.mag();
-        if (m == 0)
-            return new Vector3();
-        return new Vector3(this.x / m, this.y / m, this.z / m);
-    }
-    mag() {
-        return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
-    }
-    dot(b) {
-        return (this.x * b.x) + (this.y * b.y) + (this.z * b.z);
-    }
-    cross(b) {
-        return new Vector3(this.y * b.z - this.z * b.y, this.z * b.x - this.x * b.z, this.x * b.y - this.y * b.x);
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Vector3;
-
-
-
-/***/ }),
-/* 2 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-class SharedMemory {
-    constructor(wasminstance, sizebytes) {
-        this.size = 0;
-        this.wasm = wasminstance;
-        if (sizebytes)
-            this.allocate(sizebytes);
-    }
-    // Lock a chunk of WASM heap
-    allocate(sizebytes) {
-        this.size = sizebytes;
-        this._heap = this.wasm._malloc(sizebytes);
-        this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
-        // Note: us
-        this._buffer32 = new Int32Array(this.wasm.buffer, this._heap, this.size);
-        return this.size;
-    }
-    // Blit `from` -> `.buffer`
-    copy(from) {
-        if (!this.size)
-            throw ReferenceError("Copying into unallocated memory");
-        if (from.length != this._buffer.length)
-            console.warn("Array byte size mis-match, truncating will occur");
-        this._buffer.set(from);
-    }
-    // Warning: this returns a generic ref to the *entire* heap at base address!
-    get heap() {
-        return this.wasm.buffer;
-    }
-    // Return a ref to our buffer view into WASM space
-    get buffer() {
-        return this._buffer;
-    }
-    get bufferi32() {
-        return this._buffer32;
-    }
-    // Return the heap pointer in WASM space (C funcs will need this)
-    get pointer() {
-        return this._heap;
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = SharedMemory;
-
-
-
-/***/ }),
-/* 3 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__math_Vector3__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__math_Matrix__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Sym__ = __webpack_require__(0);
-// Device.ts
-// Just abstracts the canvas crap
-// Accepts a Uint8 buffer for rendering
-
-
-
-// rename VideoDevice() as will extend to include texture "memory" etc
-class Device {
-    constructor(width, height, rasteriser) {
-        this.width = width;
-        this.height = height;
-        this.hwidth = (width / 2) >> 0;
-        this.hheight = (height / 2) >> 0;
-        this.rasteriser = rasteriser;
-        this.container = null;
-        this.rasteriser.init(width, height);
-        this.bytes = width * height * __WEBPACK_IMPORTED_MODULE_2__Sym__["a" /* BYTES_PER_PIXEL */];
-    }
-    create(element) {
-        let e = !(element) ? document.body :
-            document.getElementById(element);
-        let c = document.createElement('canvas');
-        this.container = document.createElement('div');
-        // this.container.style.backgroundColor = "#f0f";
-        this.container.style.width = this.width + "px";
-        this.container.style.height = this.height + "px";
-        this.container.style.position = "relative";
-        // this.container.style.border = "1px solid #d0d0d0";
-        this.container.appendChild(c);
-        c.width = this.width;
-        c.height = this.height;
-        this.canvas = c;
-        this.context = this.canvas.getContext('2d');
-        // the actual pixel data
-        this.imageData = this.context.getImageData(0, 0, this.width, this.height);
-        e.appendChild(this.container);
-        this.clear();
-    }
-    use(rasteriser) {
-        if (!rasteriser.ready)
-            rasteriser.init(this.width, this.height);
-        this.rasteriser = rasteriser;
-    }
-    clear() {
-        this.rasteriser.begin();
-    }
-    // Old school points for smiling at 'flip'
-    flip() {
-        if (!this.rasteriser.buffer)
-            throw new ReferenceError("`rasteriser.buffer: Uint8ClampedArray` is required!");
-        this.imageData.data.set(this.rasteriser.buffer);
-        this.context.putImageData(this.imageData, 0, 0);
-        this.rasteriser.end();
-    }
-    // Renders a textured Mesh with zBuffer
-    render(m, mat) {
-        // Directional light
-        let light = [0, 0, -1];
-        let saturation = 1.35;
-        // Initialise these outside the loop for normal/lighting calcs
-        let v1 = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create();
-        let v2 = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create();
-        let fnormal = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create();
-        // Rasterisation screen coordinates buffer
-        let triscreen = [
-            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create(),
-            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create(),
-            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create()
-        ];
-        // Triangle world coordinates for lighting, culling
-        let triworld = [
-            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create(),
-            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create(),
-            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create()
-        ];
-        let vertex;
-        let transform = __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].create();
-        __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].concat([m.matrix, mat], transform);
-        // For each face (triangle) of the mesh model
-        for (let fi = 0; fi < m.faces.length; fi++) {
-            let face = m.faces[fi];
-            // Transform each face's vertex into view space
-            for (let v = 0; v < 3; v++) {
-                vertex = m.vertices[face[v]];
-                __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].transform(vertex, transform, triworld[v]);
-                triscreen[v][0] = triworld[v][0] * this.width + this.hwidth;
-                triscreen[v][1] = -triworld[v][1] * this.height + this.hheight;
-                triscreen[v][2] = triworld[v][2];
-            }
-            // Compute lighting & visibilty for this face
-            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].sub(triworld[2], triworld[1], v1);
-            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].sub(triworld[1], triworld[0], v2);
-            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].cross(v1, v2, fnormal);
-            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].norm(fnormal, fnormal);
-            let power = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].dot(fnormal, light);
-            // Rasterise if visible etc
-            if (power > 0 && m.textures.length > 0) {
-                // Call the rasteriser! JS || WASM
-                this.rasteriser.tri(triscreen, m.uvs[fi], power * saturation, m.textures[m.uvtextures[fi]]);
-            }
-        }
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Device;
-
-
-
-/***/ }),
-/* 4 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(2);
 
 // Method class for 4D Matrix manipulation. Static for speed (2x! - tested)
 // Column-major order, right-hand system. Matches OpenGL et al.
@@ -476,11 +225,262 @@ class Matrix {
 
 
 /***/ }),
+/* 2 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+// Vector3.ts
+//        offers static overloads operating on simple arrays for speed
+// Passing the `out` by reference instead of creating & returning `out`
+// is literally twice the speed (Chrome 58). As it always was in the C dayssss
+// So, doing it like this with using TypeScript's static and overload options.
+// Garbage collector takin' it easy too.
+class Vector3 {
+    constructor(x = 0, y = 0, z = 0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    // Static Methods ///////////////////////////////////////////////////////////
+    static create(a, b, c) {
+        return [a || 0, b || 0, c || 0];
+    }
+    static add(a, b, out) {
+        out[0] = a[0] + b[0];
+        out[1] = a[1] + b[1];
+        out[2] = a[2] + b[2];
+    }
+    static sub(a, b, out) {
+        out[0] = a[0] - b[0];
+        out[1] = a[1] - b[1];
+        out[2] = a[2] - b[2];
+    }
+    static mul(a, s, out) {
+        out[0] = a[0] * s;
+        out[1] = a[1] * s;
+        out[2] = a[2] * s;
+    }
+    static div(a, d, out) {
+        let id = 1 / d;
+        out[0] = a[0] * id;
+        out[1] = a[1] * id;
+        out[2] = a[2] * id;
+    }
+    static norm(v, out) {
+        let m = Vector3.mag(v);
+        if (m == 0)
+            out = [];
+        else
+            [out[0], out[1], out[2]] = [v[0] / m, v[1] / m, v[2] / m];
+    }
+    static mag(v) {
+        return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    }
+    static dot(a, b) {
+        return (a[0] * b[0]) + (a[1] * b[1]) + (a[2] * b[2]);
+    }
+    static cross(a, b, out) {
+        out[0] = a[1] * b[2] - a[2] * b[1];
+        out[1] = a[2] * b[0] - a[0] * b[2];
+        out[2] = a[0] * b[1] - a[1] * b[0];
+    }
+    // Instance Methods /////////////////////////////////////////////////////////
+    add(b) {
+        return new Vector3(this.x + b.x, this.y + b.y, this.z + b.z);
+    }
+    sub(b) {
+        return new Vector3(this.x - b.x, this.y - b.y, this.z - b.z);
+    }
+    norm() {
+        let m = this.mag();
+        if (m == 0)
+            return new Vector3();
+        return new Vector3(this.x / m, this.y / m, this.z / m);
+    }
+    mag() {
+        return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+    }
+    dot(b) {
+        return (this.x * b.x) + (this.y * b.y) + (this.z * b.z);
+    }
+    cross(b) {
+        return new Vector3(this.y * b.z - this.z * b.y, this.z * b.x - this.x * b.z, this.x * b.y - this.y * b.x);
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Vector3;
+
+
+
+/***/ }),
+/* 3 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+class SharedMemory {
+    constructor(wasminstance, sizebytes) {
+        this.size = 0;
+        this.wasm = wasminstance;
+        if (sizebytes)
+            this.allocate(sizebytes);
+    }
+    // Lock a chunk of WASM heap
+    allocate(sizebytes) {
+        this.size = sizebytes;
+        this._heap = this.wasm._malloc(sizebytes);
+        this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
+        // Note: us
+        this._buffer32 = new Int32Array(this.wasm.buffer, this._heap, this.size);
+        return this.size;
+    }
+    // Blit `from` -> `.buffer`
+    copy(from) {
+        if (!this.size)
+            throw ReferenceError("Copying into unallocated memory");
+        if (from.length != this._buffer.length)
+            console.warn("Array byte size mis-match, truncating will occur");
+        this._buffer.set(from);
+    }
+    // Warning: this returns a generic ref to the *entire* heap at base address!
+    get heap() {
+        return this.wasm.buffer;
+    }
+    // Return a ref to our buffer view into WASM space
+    get buffer() {
+        return this._buffer;
+    }
+    get bufferi32() {
+        return this._buffer32;
+    }
+    // Return the heap pointer in WASM space (C funcs will need this)
+    get pointer() {
+        return this._heap;
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = SharedMemory;
+
+
+
+/***/ }),
+/* 4 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__math_Vector3__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__math_Matrix__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Sym__ = __webpack_require__(0);
+// Device.ts
+// Just abstracts the canvas crap
+// Accepts a Uint8 buffer for rendering
+
+
+
+// rename VideoDevice() as will extend to include texture "memory" etc
+class Device {
+    constructor(width, height, rasteriser) {
+        this.width = width;
+        this.height = height;
+        this.hwidth = (width / 2) >> 0;
+        this.hheight = (height / 2) >> 0;
+        this.rasteriser = rasteriser;
+        this.container = null;
+        this.rasteriser.init(width, height);
+        this.bytes = width * height * __WEBPACK_IMPORTED_MODULE_2__Sym__["a" /* BYTES_PER_PIXEL */];
+    }
+    create(element) {
+        let e = !(element) ? document.body :
+            document.getElementById(element);
+        let c = document.createElement('canvas');
+        this.container = document.createElement('div');
+        // this.container.style.backgroundColor = "#f0f";
+        this.container.style.width = this.width + "px";
+        this.container.style.height = this.height + "px";
+        this.container.style.position = "relative";
+        // this.container.style.border = "1px solid #d0d0d0";
+        this.container.appendChild(c);
+        c.width = this.width;
+        c.height = this.height;
+        this.canvas = c;
+        this.context = this.canvas.getContext('2d');
+        // the actual pixel data
+        this.imageData = this.context.getImageData(0, 0, this.width, this.height);
+        e.appendChild(this.container);
+        this.clear();
+    }
+    use(rasteriser) {
+        if (!rasteriser.ready)
+            rasteriser.init(this.width, this.height);
+        this.rasteriser = rasteriser;
+    }
+    clear() {
+        this.rasteriser.begin();
+    }
+    // Old school points for smiling at 'flip'
+    flip() {
+        if (!this.rasteriser.buffer)
+            throw new ReferenceError("`rasteriser.buffer: Uint8ClampedArray` is required!");
+        this.imageData.data.set(this.rasteriser.buffer);
+        this.context.putImageData(this.imageData, 0, 0);
+        this.rasteriser.end();
+    }
+    // Renders a textured Mesh with zBuffer
+    render(m, mat) {
+        // Directional light
+        let light = [0, 0, -1];
+        let saturation = 1.35;
+        // Initialise these outside the loop for normal/lighting calcs
+        let v1 = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create();
+        let v2 = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create();
+        let fnormal = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create();
+        // Rasterisation screen coordinates buffer
+        let triscreen = [
+            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create(),
+            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create(),
+            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create()
+        ];
+        // Triangle world coordinates for lighting, culling
+        let triworld = [
+            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create(),
+            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create(),
+            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create()
+        ];
+        let vertex;
+        let transform = __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].create();
+        __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].concat([m.matrix, mat], transform);
+        // For each face (triangle) of the mesh model
+        for (let fi = 0; fi < m.faces.length; fi++) {
+            let face = m.faces[fi];
+            // Transform each face's vertex into view space
+            for (let v = 0; v < 3; v++) {
+                vertex = m.vertices[face[v]];
+                __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].transform(vertex, transform, triworld[v]);
+                triscreen[v][0] = triworld[v][0] * this.width + this.hwidth;
+                triscreen[v][1] = -triworld[v][1] * this.height + this.hheight;
+                triscreen[v][2] = triworld[v][2];
+            }
+            // Compute lighting & visibilty for this face
+            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].sub(triworld[2], triworld[1], v1);
+            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].sub(triworld[1], triworld[0], v2);
+            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].cross(v1, v2, fnormal);
+            __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].norm(fnormal, fnormal);
+            let power = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].dot(fnormal, light);
+            // Rasterise if visible etc
+            if (power > 0 && m.textures.length > 0) {
+                // Call the rasteriser! JS || WASM
+                this.rasteriser.tri(triscreen, m.uvs[fi], power * saturation, m.textures[m.uvtextures[fi]]);
+            }
+        }
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Device;
+
+
+
+/***/ }),
 /* 5 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__SharedMemory__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__SharedMemory__ = __webpack_require__(3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__core_Sym__ = __webpack_require__(0);
 
 
@@ -529,7 +529,7 @@ class Texture {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__math_Matrix__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__math_Matrix__ = __webpack_require__(1);
 
 class Mesh {
     constructor() {
@@ -868,7 +868,7 @@ class NativeRasteriser {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__memory_SharedMemory__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__memory_SharedMemory__ = __webpack_require__(3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__core_Sym__ = __webpack_require__(0);
 
 
@@ -1243,8 +1243,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__ = __webpack_require__(9);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__ = __webpack_require__(7);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__ = __webpack_require__(8);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__Device__ = __webpack_require__(3);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__math_Matrix__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__Device__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__math_Matrix__ = __webpack_require__(1);
 
 
 
@@ -1373,7 +1373,7 @@ function runbenchmarks(wasm)
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(2);
 
 // Not convinced I need this class anywhere. Schedule for review/delete.
 const X = 0, Y = 1;
