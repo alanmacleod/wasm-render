@@ -72,8 +72,13 @@ void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
 
   // Vector2.ts: Vector3.cross( va, vb, bc );
   // vec/cross product of two vectors
+  // Recalculate
   int bc0 = va1 * vb2 - va2 * vb1;
   int bc1 = va2 * vb0 - va0 * vb2;
+
+  // bc2 = (cx - ax) * (by - ay) - (bx - ax) * (cy - ay);
+
+  // Cache
   int bc2 = va0 * vb1 - va1 * vb0;
 
   // outside
@@ -116,7 +121,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   if (minx >= buffer_width) return;
   if (miny >= buffer_height) return;
 
-  float o0=0, o1=0, o2=0;
+  // float o0=0, o1=0, o2=0;
   int tu, tv;
   float u, v;
   int to;
@@ -140,12 +145,40 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
 
   int r, g, b;
 
+  // Barycentre setup, cache vectors
+  int va0 = p2x - p0x;
+  int va1 = p1x - p0x;
+  int va2;
+
+  int vb0 = p2y - p0y;
+  int vb1 = p1y - p0y;
+  int vb2;
+
+  int bc0;
+  int bc1;
+  int bc2 = va0 * vb1 - va1 * vb0;
+
+  float o0, o1, o2, oiz;
+
+
   for (y=miny; y<=maxy; y++)
   {
     for (x=minx; x<=maxx; x++)
     {
+      if (Math_abs(bc2) < 1)
+        continue;
 
-      barycentric(x, y, p0x, p0y, p1x, p1y, p2x, p2y, &o0, &o1, &o2);
+      va2 = p0x - x;
+      vb2 = p0y - y;
+
+      bc0 = va1 * vb2 - va2 * vb1;
+      bc1 = va2 * vb0 - va0 * vb2;
+
+      float oiz = 1 / (float)bc2;
+
+      o0 = 1.0 - ((float)(bc0 + bc1)) * oiz;
+      o1 = ((float)bc1) * oiz;
+      o2 = ((float)bc0) * oiz;
 
       if (o0 < 0 || o1 < 0 || o2 < 0)
         continue;

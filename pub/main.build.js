@@ -316,6 +316,11 @@ class Vector3 {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+//  SharedMemory.ts
+//        Allows sharing a pool of memory between Javascript and WebAssembly
+//        Necessary for fast real-time rasteriser switching
+//        and for communication between C and JS
+//        Uses 50% less memory than the alternative, obviously
 class SharedMemory {
     constructor(wasminstance, sizebytes) {
         this.size = 0;
@@ -531,6 +536,10 @@ class Texture {
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__math_Matrix__ = __webpack_require__(1);
 
+// Mesh.ts
+//        Represents a simple 3d model with a texture(s)
+//        Just using a box for now, but can handle arbitrary 3d models easily.
+//
 class Mesh {
     constructor() {
         this.matrix = __WEBPACK_IMPORTED_MODULE_0__math_Matrix__["a" /* default */].create();
@@ -872,6 +881,8 @@ class NativeRasteriser {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__core_Sym__ = __webpack_require__(0);
 
 
+// WasmRasteriser.ts
+//              Mostly a skeleton class to hook up the WebAssembly funcs               
 class WasmRasteriser {
     constructor(wasm) {
         this.wasm = wasm;
@@ -1428,8 +1439,9 @@ class Vector2 {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-// Crusty old JS line routine I had lying around, cba to port to TS properly
-// Therein lies a strength/weakness with TS ... I don't have to.
+// Clip.ts
+//        Crusty old JS line routine I had lying around, cba to port to TS properly
+//        Therein lies a strength/weakness with TS ... cos I don't have to.
 class Clip {
     constructor() { }
     static line(x1, y1, x2, y2, x_min, y_min, x_max, y_max) {
