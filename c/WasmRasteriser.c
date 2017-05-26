@@ -209,19 +209,18 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
 
   int x, y;
 
-//  printf("%f,%f  %f,%f  %f,%f\n", u0, v0, u1, v1, u2, v2);
-
+  // Perspective correct shizz
   float inv_p0z = 1 / p0z;
   float inv_p1z = 1 / p1z;
   float inv_p2z = 1 / p2z;
 
-  float inv_p0u = u0 / p0z;
-  float inv_p1u = u1 / p1z;
-  float inv_p2u = u2 / p2z;
+  float inv_p0u = u0 * inv_p0z;
+  float inv_p1u = u1 * inv_p1z;
+  float inv_p2u = u2 * inv_p2z;
 
-  float inv_p0v = v0 / p0z;
-  float inv_p1v = v1 / p1z;
-  float inv_p2v = v2 / p2z;
+  float inv_p0v = v0 * inv_p0z;
+  float inv_p1v = v1 * inv_p1z;
+  float inv_p2v = v2 * inv_p2z;
 
   float inv_Pz, inv_Pu, inv_Pv;
 
@@ -245,34 +244,21 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
                 inv_p1u * o1 +
                 inv_p2u * o2;
 
-      inv_Pu =  inv_p0v * o0 +
+      inv_Pv =  inv_p0v * o0 +
                 inv_p1v * o1 +
                 inv_p2v * o2;
-                
-      // tu = ((int)((inv_Pu / inv_Pz) * texmaxu));
-      // tv = ((int)((inv_Pv / inv_Pz) * texmaxv));
 
-      // tu = (int)((u0 * o0) + (u1 * o1) + (u2 * o2));
-      // tv = (int)((v0 * o0) + (v1 * o1) + (v2 * o2));
+      u = ((inv_Pu / inv_Pz) * texmaxu);
+      v = ((inv_Pv / inv_Pz) * texmaxv);
 
-      u = (((u0 * o0) + (u1 * o1) + (u2 * o2)) * texmaxu);
-      v = (((v0 * o0) + (v1 * o1) + (v2 * o2)) * texmaxv);
-
-      if (x == minx)
-      {
-        // printf("%i, %i\n", tu, tv);
-      }
-
-      tu = (int)u;
-      tv = (int)v;
-
-      to = (tv * texwid << 2) + ( tu << 2);
+      to = ((int)v * texwid << 2) + ((int)u << 2);
 
       r = texels[ to + 0 ];
       g = texels[ to + 1 ];
       b = texels[ to + 2 ];
 
-      pset(x, y, 4278190080 + (b << 16) + (g << 8) + r);
+      // Magic number = Alpha = (255 << 24)
+      heap_ptr[ y * buffer_width + x ] = 4278190080 + (b << 16) + (g << 8) + r;
 
     }
   }

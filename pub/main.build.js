@@ -706,6 +706,8 @@ class NativeRasteriser {
         this.ready = false;
     }
     init(w, h) {
+        if (this.ready)
+            return;
         this.width = w;
         this.hwidth = (w / 2) >> 0;
         this.height = h;
@@ -872,7 +874,6 @@ class NativeRasteriser {
         maxx >>= 0;
         miny >>= 0;
         maxy >>= 0;
-        8;
         let P = [0, 0];
         let o = [0, 0, 0];
         let texels = tex.data.buffer;
@@ -979,6 +980,8 @@ class WasmRasteriser {
         // console.log("WASM tasks: "+ this.taskno);
     }
     init(w, h) {
+        if (this.ready)
+            return;
         this.width = w;
         this.height = h;
         this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_1__Sym__["a" /* BYTES_PER_PIXEL */];
@@ -1370,6 +1373,7 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     // The 'device' calls the rasterisers and handles the Canvas
     let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, wraster);
     device.create();
+    // device.switchrasteriser(wraster)
     s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS, device.container, function () {
         console.log("Click graph!");
     });

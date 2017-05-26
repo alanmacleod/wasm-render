@@ -63,6 +63,7 @@ export default class WasmRasteriser implements IRasteriser
 
   public init(w: number, h: number)
   {
+    if (this.ready) return;
     this.width = w;
     this.height = h;
     this.pagesize = w * h * BYTES_PER_PIXEL;

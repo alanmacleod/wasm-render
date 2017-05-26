@@ -49,6 +49,8 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   let device = new Device( SCR_WIDTH, SCR_HEIGHT, wraster );
   device.create();
 
+  // device.switchrasteriser(wraster)
+
   s = new StatsGraph(StatsMode.MS, device.container, function(){
     console.log("Click graph!");
   });

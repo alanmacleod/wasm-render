@@ -36,6 +36,7 @@ export default class NativeRasteriser implements IRasteriser
 
   public init(w: number, h: number): void
   {
+    if (this.ready) return;
     this.width = w; this.hwidth = (w/2)>>0;
     this.height = h; this.hheight = (h/2)>>0;
     this.pagesize = w * h * BYTES_PER_PIXEL;
@@ -224,7 +225,7 @@ export default class NativeRasteriser implements IRasteriser
     // Fast float->int convert. Need ints otherwise gaps in the BC test.
     minx >>= 0; maxx >>= 0;
     miny >>= 0; maxy >>= 0;
-8
+
     let P:number[] = [0, 0];
     let o = [0, 0, 0];
 
