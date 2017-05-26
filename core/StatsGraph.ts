@@ -24,6 +24,11 @@ export default class StatsGraph
     this.stats.begin();
   }
 
+  setview(title:string)
+  {
+    this.stats.setview(title);
+  }
+
   end():void
   {
     this.stats.end();

@@ -499,6 +499,9 @@ class StatsGraph {
     begin() {
         this.stats.begin();
     }
+    setview(title) {
+        this.stats.setview(title);
+    }
     end() {
         this.stats.end();
     }
@@ -1100,7 +1103,8 @@ class WasmRasteriser {
 		container.addEventListener('click', function (event) {
 
 			event.preventDefault();
-			showPanel(++mode % container.children.length);
+			// showPanel( ++ mode % container.children.length );
+
 			if (clickHandler) clickHandler();
 		}, false);
 
@@ -1146,6 +1150,11 @@ class WasmRasteriser {
 
 			addPanel: addPanel,
 			showPanel: showPanel,
+
+			setview: function (title) {
+				//console.log(msPanel);
+				msPanel.textlabel = title;
+			},
 
 			begin: function () {
 
@@ -1234,6 +1243,8 @@ class WasmRasteriser {
 
 			dom: canvas,
 
+			textlabel: "JavaScript:",
+
 			update: function (value, maxValue) {
 
 				min = Math.min(min, value);
@@ -1247,7 +1258,7 @@ class WasmRasteriser {
 				// title text
 				context.fillStyle = '#ffffff'; //fg
 				//let text = ' JavaScript ('+system+') frame time: ' + round( value ) + ' ' + name + ' (' + round( min ) + '-' + round( max ) + ')';
-				let text = ' WebAssembly / C: ' + round(value) + ' ' + name;
+				let text = ' ' + this.textlabel + ' ' + round(value) + ' ' + name;
 				context.fillText(text, TEXT_X, GRAPH_HEIGHT + 16);
 				context.fillStyle = fg;
 
@@ -1349,7 +1360,10 @@ const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
-let s;
+let stats;
+const RASTERISER_NATIVE = 0, RASTERISER_WASM = 1;
+let rasterisers = [];
+let currentraster = RASTERISER_NATIVE;
 // Create and position simple test object
 let box = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
 box.boxgeometry(1, 1, 1);
@@ -1365,28 +1379,31 @@ __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mcamera, mproje
 // Load the WASM code over the wire
 w.load("./wasm/WasmRasteriser").then((wasm) => {
     // // Create the two rasterisers
-    let nraster = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__["a" /* default */]();
-    let wraster = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);
+    rasterisers[0] = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__["a" /* default */]();
+    rasterisers[1] = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);
     // Load the texture here because the WASM instance is needed for SharedMem
     let t = new __WEBPACK_IMPORTED_MODULE_2__Texture__["a" /* default */](wasm, "./img/radicrate.jpg");
     box.textures.push(t);
     // The 'device' calls the rasterisers and handles the Canvas
-    let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, wraster);
+    let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, rasterisers[currentraster]);
     device.create();
     // device.switchrasteriser(wraster)
-    s = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS, device.container, function () {
-        console.log("Click graph!");
+    stats = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS, device.container, function () {
+        currentraster = 1 - currentraster;
+        device.use(rasterisers[currentraster]);
+        let title = currentraster ? "WebAssembly / C:" : "JavaScript:";
+        stats.setview(title);
     });
     requestAnimationFrame(render);
-    var ang = 0;
+    var ang = 360;
     // Main render loop
     function render() {
-        s.begin();
-        box.setrotation([0, (ang += 2) % 360, 0]);
+        stats.begin();
+        box.setrotation([0, (ang -= 2) % 360, 0]);
         device.clear();
         device.render(box, mtransform);
         device.flip();
-        s.end();
+        stats.end();
         // if (ang < 10)
         requestAnimationFrame(render);
     }

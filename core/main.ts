@@ -15,8 +15,11 @@ const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
 
 let w = new WasmLoader();
-let s;
+let stats;
 
+const RASTERISER_NATIVE = 0, RASTERISER_WASM = 1;
+let rasterisers = [];
+let currentraster = RASTERISER_NATIVE;
 
 // Create and position simple test object
 let box = new Mesh();
@@ -38,39 +41,42 @@ Matrix.concat( [mcamera, mprojection], mtransform );
 w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 {
   // // Create the two rasterisers
-  let nraster = new NativeRasteriser();
-  let wraster = new WasmRasteriser( wasm );
+  rasterisers[0] = new NativeRasteriser();
+  rasterisers[1] = new WasmRasteriser( wasm );
 
   // Load the texture here because the WASM instance is needed for SharedMem
   let t = new Texture( wasm, "./img/radicrate.jpg" );
   box.textures.push( t );
 
   // The 'device' calls the rasterisers and handles the Canvas
-  let device = new Device( SCR_WIDTH, SCR_HEIGHT, wraster );
+  let device = new Device( SCR_WIDTH, SCR_HEIGHT, rasterisers[currentraster] );
   device.create();
 
   // device.switchrasteriser(wraster)
 
-  s = new StatsGraph(StatsMode.MS, device.container, function(){
-    console.log("Click graph!");
+  stats = new StatsGraph(StatsMode.MS, device.container, function(){
+    currentraster = 1 - currentraster;
+    device.use(rasterisers[currentraster]);
+    let title = currentraster ? "WebAssembly / C:" : "JavaScript:";
+    stats.setview(title);
   });
 
 
   requestAnimationFrame( render );
-  var ang = 0;
+  var ang = 360;
 
   // Main render loop
   function render()
   {
-    s.begin();
+    stats.begin();
 
-    box.setrotation( [0, (ang+=2) % 360, 0] );
+    box.setrotation( [0, (ang-=2) % 360, 0] );
 
     device.clear();
     device.render( box, mtransform );
     device.flip();
 
-    s.end();
+    stats.end();
     // if (ang < 10)
     requestAnimationFrame( render );
   }
