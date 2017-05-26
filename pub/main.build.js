@@ -872,6 +872,7 @@ class NativeRasteriser {
         maxx >>= 0;
         miny >>= 0;
         maxy >>= 0;
+        8;
         let P = [0, 0];
         let o = [0, 0, 0];
         let texels = tex.data.buffer;
@@ -884,6 +885,7 @@ class NativeRasteriser {
         let inv_p0z = 1 / points[0][2];
         let inv_p1z = 1 / points[1][2];
         let inv_p2z = 1 / points[2][2];
+        // FIXME below: just * by inv_p0z etc you idiot.
         let inv_p0u = uvs[0][0] / points[0][2];
         let inv_p1u = uvs[1][0] / points[1][2];
         let inv_p2u = uvs[2][0] / points[2][2];
@@ -949,10 +951,15 @@ class NativeRasteriser {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Sym__ = __webpack_require__(0);
 
 
-const WASM_TASK_LENGTH = __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] // triangle point0 X, Y
-    + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] // point1 X, Y
-    + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */] + __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */]; // point2 X, Y
-const WASM_TASK_ELEMENTS = 6;
+const WASM_TASK = [__WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
+    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
+    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
+    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
+    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
+    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
+    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */]]; // texture ptr and width
+const WASM_TASK_NUM_ELEMENTS = WASM_TASK.length;
+const WASM_TASK_SIZE_BYTES = WASM_TASK.reduce((a, v) => { return a + v; });
 class WasmRasteriser {
     constructor(wasm) {
         this.wasm = wasm;
@@ -964,9 +971,7 @@ class WasmRasteriser {
         this.framebuffer.buffer.fill(0);
     }
     finish() {
-        // Smash the arse off the C rasteriser
-        // if (this.taskno == 4)
-        //   console.log(this.taskbuffer.bufferi32);
+        // Flush the task buffer
         this.wasm._exec_jobs(this.taskno);
     }
     end() {
@@ -980,7 +985,7 @@ class WasmRasteriser {
         // Alocate some shared memory
         this.framebuffer = new __WEBPACK_IMPORTED_MODULE_0__SharedMemory__["a" /* default */](this.wasm, this.pagesize);
         // Rasterisation jobs per frame
-        this.taskbuffer = new __WEBPACK_IMPORTED_MODULE_0__SharedMemory__["a" /* default */](this.wasm, __WEBPACK_IMPORTED_MODULE_1__Sym__["c" /* MAX_WASM_TASKS_PER_FRAME */] * WASM_TASK_LENGTH);
+        this.taskbuffer = new __WEBPACK_IMPORTED_MODULE_0__SharedMemory__["a" /* default */](this.wasm, __WEBPACK_IMPORTED_MODULE_1__Sym__["c" /* MAX_WASM_TASKS_PER_FRAME */] * WASM_TASK_SIZE_BYTES);
         // Tell the WASM exports where to find the heap data and also pass dims
         this.wasm._init(this.framebuffer.pointer, w, h, this.taskbuffer.pointer);
         this.ready = true;
@@ -1003,21 +1008,50 @@ class WasmRasteriser {
         this.wasm._fill(this.rgbpack(r, g, b));
     }
     tri(points, uvs, light, tex) {
-        // No actual rasterisation done here, just buffering the calls to a single
-        // WASM call stack per frame
-        if (this.taskno >= __WEBPACK_IMPORTED_MODULE_1__Sym__["c" /* MAX_WASM_TASKS_PER_FRAME */]) {
-            console.warn("Out of task buffer space!");
+        // In Javascript we render wireframe before the texture has loaded
+        // but for WASM I'll just skip adding the job cos I haven't implemented
+        // a line routine in C!
+        if (!tex.ready)
             return;
-        }
-        let offset = this.taskno * WASM_TASK_ELEMENTS;
-        let buff = this.taskbuffer.bufferi32;
-        for (let p = 0; p < points.length; p++) {
-            let point = points[p];
-            buff[offset + 0] = point[0];
-            buff[offset + 1] = point[1];
-            offset += 2;
-        }
-        this.taskno++;
+        this.wasm._tri(points[0][0], points[0][1], points[0][2], uvs[0][0], uvs[0][1], points[1][0], points[1][1], points[1][2], uvs[1][0], uvs[1][1], points[2][0], points[2][1], points[2][2], uvs[2][0], uvs[2][1], tex.data.pointer, tex.width);
+        // // No actual rasterisation done here, just buffering the calls to a single
+        // // WASM call stack per frame
+        //
+        // // In Javascript we render wireframe before the texture has loaded
+        // // but for WASM I'll just skip adding the job cos I haven't implemented
+        // // a line routine in C!
+        // if (!tex.ready)
+        //   return;
+        //
+        // if (this.taskno >= MAX_WASM_TASKS_PER_FRAME)
+        // {
+        //   console.warn("Out of task buffer space!");
+        //   return;
+        // }
+        //
+        // let offset = this.taskno * WASM_TASK_NUM_ELEMENTS;
+        // let buff = this.taskbuffer.bufferi32;
+        //
+        // // 1. Add the triangle points to the task buffer (6 ints)
+        // for (let p=0; p<points.length; p++)
+        // {
+        //   let point = points[p];
+        //   let uv = uvs[p];
+        //
+        //   buff[ offset + 0 ] = point[0];
+        //   buff[ offset + 1 ] = point[1];
+        //   buff[ offset + 2 ] = Math.round(uv[0] * 65536); // Let's use fixed point
+        //   buff[ offset + 3 ] = Math.round(uv[1] * 65536); //
+        //
+        //   offset += 4;
+        // }
+        //
+        // // 2. Now for this triangle, provide the texture info
+        //
+        // buff[ offset + 0 ] = tex.data.pointer;
+        // buff[ offset + 1 ] = tex.width;
+        //
+        // this.taskno++;
     }
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = WasmRasteriser;
@@ -1210,8 +1244,8 @@ class WasmRasteriser {
 				// title text
 				context.fillStyle = '#ffffff'; //fg
 				//let text = ' JavaScript ('+system+') frame time: ' + round( value ) + ' ' + name + ' (' + round( min ) + '-' + round( max ) + ')';
-				let text = ' JavaScript: ' + round(value) + ' ' + name;
-				context.fillText(text, TEXT_X, GRAPH_HEIGHT + 17);
+				let text = ' WebAssembly / C: ' + round(value) + ' ' + name;
+				context.fillText(text, TEXT_X, GRAPH_HEIGHT + 16);
 				context.fillStyle = fg;
 
 				// Shift the graph <--- left
@@ -1267,7 +1301,6 @@ class Vector2 {
             return;
         }
         let iz = 1 / bc[2];
-        console.log(iz);
         o[0] = 1.0 - (bc[0] + bc[1]) * iz;
         o[1] = bc[1] * iz;
         o[2] = bc[0] * iz;
@@ -1317,7 +1350,7 @@ let s;
 // Create and position simple test object
 let box = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
 box.boxgeometry(1, 1, 1);
-box.set([0, 0, 4], [0, 0, 0]);
+box.set([0, 0, 6], [0, 0, 0]);
 // Eye -> Screen matrices
 let mprojection = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Camera -> Screen
 let mcamera = __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].create(); // Duh
@@ -1328,17 +1361,6 @@ __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].lookat([0, 0, 10], [0, 
 __WEBPACK_IMPORTED_MODULE_7__Matrix__["a" /* default */].concat([mcamera, mprojection], mtransform);
 // Load the WASM code over the wire
 w.load("./wasm/WasmRasteriser").then((wasm) => {
-    //   let o = [0,0,0];
-    //   Vector2.barycentric(
-    //     [10, 10], // P
-    //     [0,0], // A
-    //     [100, 0], // B
-    //     [0, 100], // C
-    //     o
-    //   );
-    //
-    // wasm._exec_jobs(0);
-    //   if (true) return;
     // // Create the two rasterisers
     let nraster = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__["a" /* default */]();
     let wraster = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);

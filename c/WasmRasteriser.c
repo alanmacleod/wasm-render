@@ -23,7 +23,8 @@
 /* Function declarations, just to see at a glance what's in here */
 void init( unsigned int *, unsigned int, unsigned int, unsigned int * );
 void exec_jobs ( unsigned int );
-void tri (int, int, int, int, int, int);
+void tri( int, int, float, float,float, int, int,float, float, float,
+                int, int,float,float, float, unsigned char*, unsigned int );
 void fill( unsigned int );
 int pset( int, int, unsigned int val );
 void vline( int, int, int, unsigned int );
@@ -69,11 +70,16 @@ void init(unsigned int *buffer, unsigned int width, unsigned int height, unsigne
   initialised = true;
 }
 
+// Execute all jobs in the task buffer one by one
 void exec_jobs(unsigned int num)
 {
   int o = 0;
   int x = 0, y = 0;
   int p0x,  p0y,  p1x,  p1y,  p2x,  p2y;
+  unsigned char *texture_ptr;
+  unsigned int texture_wid;
+
+  float u0, v0, u1, v1, u2, v2;
 
   // float o0, o1, o2;
   //
@@ -101,12 +107,23 @@ void exec_jobs(unsigned int num)
   {
     p0x = job_ptr[o++];
     p0y = job_ptr[o++];
+    u0  = ((float)(job_ptr[o++])) / 65536;
+    v0  = ((float)(job_ptr[o++])) / 65536;
+
     p1x = job_ptr[o++];
     p1y = job_ptr[o++];
+    u1  = ((float)(job_ptr[o++])) / 65536;
+    v1  = ((float)(job_ptr[o++])) / 65536;
+
     p2x = job_ptr[o++];
     p2y = job_ptr[o++];
+    u2  = ((float)(job_ptr[o++])) / 65536;
+    v2  = ((float)(job_ptr[o++])) / 65536;
 
-    tri(p0x, p0y, p1x, p1y, p2x, p2y);
+    texture_ptr = (unsigned char *)job_ptr[o++];
+    texture_wid = (unsigned int)job_ptr[o++];
+
+    // tri(p0x, p0y, u0, v0, p1x, p1y, u1, v1, p2x, p2y, u2, v2, texture_ptr, texture_wid);
 
     // pset(p0x, p0y, 4278190080);
     // pset(p1x, p1y, 4278190080);
@@ -161,13 +178,18 @@ void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
   *o2 = ((float)bc0) * iz;
 }
 
-void tri(int p0x, int p0y, int p1x, int p1y, int p2x, int p2y)
+void tri( int p0x, int p0y, float p0z, float u0, float v0,
+          int p1x, int p1y, float p1z, float u1, float v1,
+          int p2x, int p2y, float p2z, float u2, float v2,
+                      unsigned char*texels, unsigned int texwid)
 {
   //BBOX
   int minx = Math_min(p0x, Math_min(p1x, p2x));
   int maxx = Math_max(p0x, Math_max(p1x, p2x));
   int miny = Math_min(p0y, Math_min(p1y, p2y));
   int maxy = Math_max(p0y, Math_max(p1y, p2y));
+
+  int texmaxu = 511, texmaxv = 511;
 
   // Clipping
   minx = Math_max(0, minx);
@@ -180,15 +202,30 @@ void tri(int p0x, int p0y, int p1x, int p1y, int p2x, int p2y)
   if (minx >= buffer_width) return;
   if (miny >= buffer_height) return;
 
-  // WORKS till here
-
   float o0=0, o1=0, o2=0;
+  int tu, tv;
+  float u, v;
+  int to;
+
   int x, y;
 
-  int cwhatever = 0;
-  int maxwhatever = 20;
+//  printf("%f,%f  %f,%f  %f,%f\n", u0, v0, u1, v1, u2, v2);
 
-  //printf("test \n");
+  float inv_p0z = 1 / p0z;
+  float inv_p1z = 1 / p1z;
+  float inv_p2z = 1 / p2z;
+
+  float inv_p0u = u0 / p0z;
+  float inv_p1u = u1 / p1z;
+  float inv_p2u = u2 / p2z;
+
+  float inv_p0v = v0 / p0z;
+  float inv_p1v = v1 / p1z;
+  float inv_p2v = v2 / p2z;
+
+  float inv_Pz, inv_Pu, inv_Pv;
+
+  int r, g, b;
 
   for (y=miny; y<=maxy; y++)
   {
@@ -200,7 +237,42 @@ void tri(int p0x, int p0y, int p1x, int p1y, int p2x, int p2y)
       if (o0 < 0 || o1 < 0 || o2 < 0)
         continue;
 
-      pset(x, y, 4278190080 + 255);
+      inv_Pz =  inv_p0z * o0 +
+                inv_p1z * o1 +
+                inv_p2z * o2;
+
+      inv_Pu =  inv_p0u * o0 +
+                inv_p1u * o1 +
+                inv_p2u * o2;
+
+      inv_Pu =  inv_p0v * o0 +
+                inv_p1v * o1 +
+                inv_p2v * o2;
+                
+      // tu = ((int)((inv_Pu / inv_Pz) * texmaxu));
+      // tv = ((int)((inv_Pv / inv_Pz) * texmaxv));
+
+      // tu = (int)((u0 * o0) + (u1 * o1) + (u2 * o2));
+      // tv = (int)((v0 * o0) + (v1 * o1) + (v2 * o2));
+
+      u = (((u0 * o0) + (u1 * o1) + (u2 * o2)) * texmaxu);
+      v = (((v0 * o0) + (v1 * o1) + (v2 * o2)) * texmaxv);
+
+      if (x == minx)
+      {
+        // printf("%i, %i\n", tu, tv);
+      }
+
+      tu = (int)u;
+      tv = (int)v;
+
+      to = (tv * texwid << 2) + ( tu << 2);
+
+      r = texels[ to + 0 ];
+      g = texels[ to + 1 ];
+      b = texels[ to + 2 ];
+
+      pset(x, y, 4278190080 + (b << 16) + (g << 8) + r);
 
     }
   }

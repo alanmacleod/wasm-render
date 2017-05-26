@@ -224,7 +224,7 @@ export default class NativeRasteriser implements IRasteriser
     // Fast float->int convert. Need ints otherwise gaps in the BC test.
     minx >>= 0; maxx >>= 0;
     miny >>= 0; maxy >>= 0;
-
+8
     let P:number[] = [0, 0];
     let o = [0, 0, 0];
 
@@ -241,6 +241,7 @@ export default class NativeRasteriser implements IRasteriser
     let inv_p1z = 1 / points[1][2];
     let inv_p2z = 1 / points[2][2];
 
+    // FIXME below: just * by inv_p0z etc you idiot.
     let inv_p0u = uvs[0][0] / points[0][2];
     let inv_p1u = uvs[1][0] / points[1][2];
     let inv_p2u = uvs[2][0] / points[2][2];

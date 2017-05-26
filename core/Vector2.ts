@@ -49,8 +49,6 @@ export default class Vector2
 
     let iz = 1 / bc[ 2 ];
 
-    console.log(iz);
-
     o[0] = 1.0 - (bc[0] + bc[1]) * iz;
     o[1] = bc[1] * iz;
     o[2] = bc[0] * iz;
