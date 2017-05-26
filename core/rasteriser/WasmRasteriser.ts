@@ -5,19 +5,7 @@ import SharedMemory                 from '../SharedMemory'
 import {WasmInstance}               from '../main.ext';
 import Mesh                         from '../mesh/Mesh';
 import {BYTES_PER_PIXEL, INT32,
-        ALPHA_MAGIC_NUMBER,
-        MAX_WASM_TASKS_PER_FRAME}   from '../Sym';
-
-const WASM_TASK = [ INT32, INT32,  // triangle point0 X, Y
-                          INT32, INT32,  // p0 U, V
-                          INT32, INT32,  // point1 X, Y
-                          INT32, INT32,  // p1 U, V
-                          INT32, INT32, // point2 X, Y
-                          INT32, INT32,  // p2 U, V
-                          INT32, INT32]; // texture ptr and width
-
-const WASM_TASK_NUM_ELEMENTS = WASM_TASK.length;
-const WASM_TASK_SIZE_BYTES = WASM_TASK.reduce((a,v) =>{ return a + v; });
+        ALPHA_MAGIC_NUMBER}         from '../Sym';
 
 
 export default class WasmRasteriser implements IRasteriser
@@ -26,10 +14,6 @@ export default class WasmRasteriser implements IRasteriser
   private width:number;
   private height:number;
   private pagesize:number;
-
-  // Single WASM call per frame, executes this raster job list:
-  private taskbuffer:SharedMemory;
-  private taskno:number;
 
   // and rasterises into this:
   private framebuffer:SharedMemory;
@@ -45,14 +29,7 @@ export default class WasmRasteriser implements IRasteriser
   public begin()
   {
     // Start a new task list
-    this.taskno = 0;
     this.framebuffer.buffer.fill(0);
-  }
-
-  public finish()
-  {
-    // Flush the task buffer
-    this.wasm._exec_jobs(this.taskno);
   }
 
   public end()
@@ -71,11 +48,8 @@ export default class WasmRasteriser implements IRasteriser
     // Alocate some shared memory
     this.framebuffer = new SharedMemory( this.wasm, this.pagesize )
 
-    // Rasterisation jobs per frame
-    this.taskbuffer = new SharedMemory( this.wasm, MAX_WASM_TASKS_PER_FRAME * WASM_TASK_SIZE_BYTES );
-
     // Tell the WASM exports where to find the heap data and also pass dims
-    this.wasm._init( this.framebuffer.pointer, w, h, this.taskbuffer.pointer );
+    this.wasm._init( this.framebuffer.pointer, w, h );
 
     this.ready = true;
   }

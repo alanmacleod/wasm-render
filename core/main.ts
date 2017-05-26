@@ -10,17 +10,18 @@ import Device                         from './Device';
 import Matrix                         from './Matrix';
 import Vector2                        from './Vector2';
 
-const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
-const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
+const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * 4;
+const RASTERISER_NATIVE = 0, RASTERISER_WASM = 1;
 
 let w = new WasmLoader();
 let stats;
 
-const RASTERISER_NATIVE = 0, RASTERISER_WASM = 1;
 let rasterisers = [];
 let currentraster = RASTERISER_NATIVE;
 
+
+// 3D scene setup
 // Create and position simple test object
 let box = new Mesh();
 box.boxgeometry( 1, 1, 1 );
@@ -36,6 +37,8 @@ Matrix.lookat( [0,0,10], [0,0,0], [0,1,0], mcamera );
 
 // Concatenate the above matrices for speed
 Matrix.concat( [mcamera, mprojection], mtransform );
+
+
 
 // Load the WASM code over the wire
 w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
@@ -54,11 +57,11 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 
   // device.switchrasteriser(wraster)
 
-  stats = new StatsGraph(StatsMode.MS, device.container, function(){
+  stats = new StatsGraph(StatsMode.MS, device.container, () => {
     currentraster = 1 - currentraster;
     device.use(rasterisers[currentraster]);
-    let title = currentraster ? "WebAssembly / C:" : "JavaScript:";
-    stats.setview(title);
+    // let title = currentraster ? "WebAssembly / C:" : "JavaScript:";
+    stats.setview(currentraster);
   });
 
 

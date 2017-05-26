@@ -5,7 +5,7 @@ module.exports = {
   extras: '', //'./c/vec3.c',
   outputfile: './pub/wasm/WasmRasteriser.js',
   exported_functions: [
-    '_init','_exec_jobs', '_fill', '_pset', '_vline', '_tri'
+    '_init', '_fill', '_pset', '_vline', '_tri'
   ],
   flags: [
     '-s WASM=1',

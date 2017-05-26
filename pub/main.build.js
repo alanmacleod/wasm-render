@@ -75,19 +75,19 @@ const BYTES_PER_PIXEL = 4;
 /* harmony export (immutable) */ __webpack_exports__["a"] = BYTES_PER_PIXEL;
 
 const BIT_SHIFT_PER_PIXEL = 2;
-/* harmony export (immutable) */ __webpack_exports__["e"] = BIT_SHIFT_PER_PIXEL;
+/* harmony export (immutable) */ __webpack_exports__["c"] = BIT_SHIFT_PER_PIXEL;
  // e.g. texelU << 2
 // e.g. texelU << 2
 const ALPHA_MAGIC_NUMBER = 4278190080;
-/* harmony export (immutable) */ __webpack_exports__["d"] = ALPHA_MAGIC_NUMBER;
+/* harmony export (immutable) */ __webpack_exports__["b"] = ALPHA_MAGIC_NUMBER;
 
 const MAX_WASM_TASKS_PER_FRAME = 1000;
-/* harmony export (immutable) */ __webpack_exports__["c"] = MAX_WASM_TASKS_PER_FRAME;
+/* unused harmony export MAX_WASM_TASKS_PER_FRAME */
  // arbitrary really;
 // Byte sizes, should probably be machine words but whatevz
 // arbitrary really;
 const INT32 = 4, PTR32 = 4, FLOAT32 = 4, FLOAT64 = 8;
-/* harmony export (immutable) */ __webpack_exports__["b"] = INT32;
+/* unused harmony export INT32 */
 
 /* unused harmony export PTR32 */
 
@@ -415,7 +415,6 @@ class Device {
     }
     // Old school points for smiling at 'flip'
     flip() {
-        this.rasteriser.finish();
         if (!this.rasteriser.buffer)
             throw new ReferenceError("`rasteriser.buffer: Uint8ClampedArray` is required!");
         this.imageData.data.set(this.rasteriser.buffer);
@@ -720,7 +719,6 @@ class NativeRasteriser {
         this.zbuffer = new Float32Array(w * h);
         this.ready = true;
     }
-    finish() { }
     begin() {
         this.buffer.fill(0);
     }
@@ -926,7 +924,7 @@ class NativeRasteriser {
                 // Divide u/z & v/z by 1/z to get perspective correct UV coords
                 u = ((inv_Pu / inv_Pz) * texmaxu) >> 0;
                 v = ((inv_Pv / inv_Pz) * texmaxv) >> 0;
-                let c = (v * texw << __WEBPACK_IMPORTED_MODULE_2__Sym__["e" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_2__Sym__["e" /* BIT_SHIFT_PER_PIXEL */]);
+                let c = (v * texw << __WEBPACK_IMPORTED_MODULE_2__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_2__Sym__["c" /* BIT_SHIFT_PER_PIXEL */]);
                 let r = texels[c + 0] * light;
                 let g = texels[c + 1] * light;
                 let b = texels[c + 2] * light;
@@ -955,15 +953,6 @@ class NativeRasteriser {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Sym__ = __webpack_require__(0);
 
 
-const WASM_TASK = [__WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
-    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
-    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
-    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
-    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
-    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */],
-    __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */], __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* INT32 */]]; // texture ptr and width
-const WASM_TASK_NUM_ELEMENTS = WASM_TASK.length;
-const WASM_TASK_SIZE_BYTES = WASM_TASK.reduce((a, v) => { return a + v; });
 class WasmRasteriser {
     constructor(wasm) {
         this.wasm = wasm;
@@ -971,12 +960,7 @@ class WasmRasteriser {
     }
     begin() {
         // Start a new task list
-        this.taskno = 0;
         this.framebuffer.buffer.fill(0);
-    }
-    finish() {
-        // Flush the task buffer
-        this.wasm._exec_jobs(this.taskno);
     }
     end() {
         // clear z-buffer
@@ -990,10 +974,8 @@ class WasmRasteriser {
         this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_1__Sym__["a" /* BYTES_PER_PIXEL */];
         // Alocate some shared memory
         this.framebuffer = new __WEBPACK_IMPORTED_MODULE_0__SharedMemory__["a" /* default */](this.wasm, this.pagesize);
-        // Rasterisation jobs per frame
-        this.taskbuffer = new __WEBPACK_IMPORTED_MODULE_0__SharedMemory__["a" /* default */](this.wasm, __WEBPACK_IMPORTED_MODULE_1__Sym__["c" /* MAX_WASM_TASKS_PER_FRAME */] * WASM_TASK_SIZE_BYTES);
         // Tell the WASM exports where to find the heap data and also pass dims
-        this.wasm._init(this.framebuffer.pointer, w, h, this.taskbuffer.pointer);
+        this.wasm._init(this.framebuffer.pointer, w, h);
         this.ready = true;
     }
     get buffer() {
@@ -1001,7 +983,7 @@ class WasmRasteriser {
     }
     rgbpack(r, g, b) {
         // little-endian bytepack: aaaaaaaa bbbbbbbb gggggggg rrrrrrrr
-        return __WEBPACK_IMPORTED_MODULE_1__Sym__["d" /* ALPHA_MAGIC_NUMBER */] + (b << 16) + (g << 8) + r;
+        return __WEBPACK_IMPORTED_MODULE_1__Sym__["b" /* ALPHA_MAGIC_NUMBER */] + (b << 16) + (g << 8) + r;
     }
     pset(x, y, r, g, b) {
         this.wasm._pset(x << 0, y << 0, this.rgbpack(r, g, b));
@@ -1114,9 +1096,11 @@ class WasmRasteriser {
 			addPanel: addPanel,
 			showPanel: showPanel,
 
-			setview: function (title) {
+			setview: function (rno) {
 				//console.log(msPanel);
-				msPanel.textlabel = title;
+				msPanel.textlabel = rno ? "WebAssembly / C:" : "JavaScript:";
+				msPanel.fillCol = rno ? "#0033CC" : "#00BB00";
+				msPanel.bgCol = rno ? "#000044" : "#006600";
 			},
 
 			begin: function () {
@@ -1208,12 +1192,16 @@ class WasmRasteriser {
 
 			textlabel: "JavaScript:",
 
+			fillCol: "#00BB00",
+
+			bgCol: "#006600",
+
 			update: function (value, maxValue) {
 
 				min = Math.min(min, value);
 				max = Math.max(max, value);
 
-				context.fillStyle = bg;
+				context.fillStyle = this.bgCol;
 				context.globalAlpha = 1;
 				// title bar
 				context.fillRect(GRAPH_X, GRAPH_HEIGHT + 15, GRAPH_WIDTH, GRAPH_Y + 3);
@@ -1223,7 +1211,7 @@ class WasmRasteriser {
 				//let text = ' JavaScript ('+system+') frame time: ' + round( value ) + ' ' + name + ' (' + round( min ) + '-' + round( max ) + ')';
 				let text = ' ' + this.textlabel + ' ' + round(value) + ' ' + name;
 				context.fillText(text, TEXT_X, GRAPH_HEIGHT + 16);
-				context.fillStyle = fg;
+				context.fillStyle = this.fillCol;
 
 				// Shift the graph <--- left
 				context.drawImage(canvas, GRAPH_X + PR, GRAPH_Y, GRAPH_WIDTH - PR, GRAPH_HEIGHT, GRAPH_X, GRAPH_Y, GRAPH_WIDTH - PR, GRAPH_HEIGHT);
@@ -1319,14 +1307,14 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 
-const INT32_SIZE_IN_BYTES = 4;
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
-const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * INT32_SIZE_IN_BYTES;
+const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * 4;
+const RASTERISER_NATIVE = 0, RASTERISER_WASM = 1;
 let w = new __WEBPACK_IMPORTED_MODULE_1__WasmLoader__["a" /* default */]();
 let stats;
-const RASTERISER_NATIVE = 0, RASTERISER_WASM = 1;
 let rasterisers = [];
 let currentraster = RASTERISER_NATIVE;
+// 3D scene setup
 // Create and position simple test object
 let box = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
 box.boxgeometry(1, 1, 1);
@@ -1351,11 +1339,11 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, rasterisers[currentraster]);
     device.create();
     // device.switchrasteriser(wraster)
-    stats = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS, device.container, function () {
+    stats = new __WEBPACK_IMPORTED_MODULE_3__StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__StatsGraph__["b" /* StatsMode */].MS, device.container, () => {
         currentraster = 1 - currentraster;
         device.use(rasterisers[currentraster]);
-        let title = currentraster ? "WebAssembly / C:" : "JavaScript:";
-        stats.setview(title);
+        // let title = currentraster ? "WebAssembly / C:" : "JavaScript:";
+        stats.setview(currentraster);
     });
     requestAnimationFrame(render);
     var ang = 360;

@@ -1,3 +1,10 @@
+
+
+
+// NOTE: Not used, abandoned plans
+
+
+
 #ifndef VEC2_H_INCLUDED
 #define VEC2_H_INCLUDED
 typedef struct vec2

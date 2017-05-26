@@ -1,4 +1,8 @@
 
+
+// NOTE: Not used, abandoned plans
+
+
 #ifndef VEC3_H_INCLUDED
 
 #define VEC3_H_INCLUDED

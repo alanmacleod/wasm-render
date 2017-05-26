@@ -1,4 +1,9 @@
 
+
+// NOTE: Not used, abandoned plans
+
+
+
 #include "vec3.h"
 #include "vec2.h"
 #include <math.h>

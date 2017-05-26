@@ -1,12 +1,13 @@
 
 // WasmRasteriser.c
+//        Triangle texture mapper with correct perspective and simple lighting
 //        Alan MacLeod, 2017
 //        alanmacleod.eu
 //        github.com/alanmacleod
 
 #include <stdio.h>
 #include <stdbool.h>
-// #include "vec3.h"
+
 #include "WasmRasteriser.h"
 
 #define BYTES_PER_PIXEL 4
@@ -21,8 +22,7 @@
           #include <emscripten/emscripten.h> */
 
 /* Function declarations, just to see at a glance what's in here */
-void init( unsigned int *, unsigned int, unsigned int, unsigned int * );
-void exec_jobs ( unsigned int );
+void init( unsigned int *, unsigned int, unsigned int );
 void tri( int, int, float, float,float, int, int,float, float, float,
                 int, int,float,float, float, unsigned char*, unsigned int, float );
 void fill( unsigned int );
@@ -40,27 +40,9 @@ unsigned int buffer_height      = 0;
 unsigned int buffer_num_pixels  = 0;
 unsigned int buffer_num_bytes   = 0;
 
-unsigned int *job_ptr = NULL;
-
-// void testExtern()
-// {
-//   vec3 v0, v1, out;
-//
-//   v0.x = 1;
-//   v0.y = 2;
-//   v0.z = 3;
-//
-//   v1.x = 2;
-//   v1.y = 3;
-//   v1.z = 4;
-//
-//   vec3_add(v0, v1, out);
-// }
-
-void init(unsigned int *buffer, unsigned int width, unsigned int height, unsigned int *jobs)
+void init(unsigned int *buffer, unsigned int width, unsigned int height)
 {
   heap_ptr = buffer;
-  job_ptr = jobs;
 
   buffer_width = width;
   buffer_height = height;
@@ -70,74 +52,6 @@ void init(unsigned int *buffer, unsigned int width, unsigned int height, unsigne
   initialised = true;
 }
 
-// Execute all jobs in the task buffer one by one
-void exec_jobs(unsigned int num)
-{
-  int o = 0;
-  int x = 0, y = 0;
-  int p0x,  p0y,  p1x,  p1y,  p2x,  p2y;
-  unsigned char *texture_ptr;
-  unsigned int texture_wid;
-
-  float u0, v0, u1, v1, u2, v2;
-
-  // float o0, o1, o2;
-  //
-  // // barycentric(
-  // //   10, 10,
-  // //   0, 0,
-  // //   100, 0,
-  // //   0, 100,
-  // //   &o0, &o1, &o2
-  // // );
-  // //
-  // // // printf("%f, %f, %f \n", o0, o1, o2);
-  // //
-  // // return;
-  // //
-
-  //
-  // for (y=0; y<buffer_width; y++)
-  // {
-  //   pset(y, y, 4278190080);
-  // }
-
-  // no "job type" header for now. Assume triangles in coord pairs (six int32s)
-  for (int i = 0; i< num; i++)
-  {
-    p0x = job_ptr[o++];
-    p0y = job_ptr[o++];
-    u0  = ((float)(job_ptr[o++])) / 65536;
-    v0  = ((float)(job_ptr[o++])) / 65536;
-
-    p1x = job_ptr[o++];
-    p1y = job_ptr[o++];
-    u1  = ((float)(job_ptr[o++])) / 65536;
-    v1  = ((float)(job_ptr[o++])) / 65536;
-
-    p2x = job_ptr[o++];
-    p2y = job_ptr[o++];
-    u2  = ((float)(job_ptr[o++])) / 65536;
-    v2  = ((float)(job_ptr[o++])) / 65536;
-
-    texture_ptr = (unsigned char *)job_ptr[o++];
-    texture_wid = (unsigned int)job_ptr[o++];
-
-    // tri(p0x, p0y, u0, v0, p1x, p1y, u1, v1, p2x, p2y, u2, v2, texture_ptr, texture_wid);
-
-    // pset(p0x, p0y, 4278190080);
-    // pset(p1x, p1y, 4278190080);
-    // pset(p2x, p2y, 4278190080);
-
-    // for (int p = 0; p<3; p++)
-    // {
-    //   x = job_ptr[o++];
-    //   y = job_ptr[o++];
-    //   pset(x, y, 4278190080);
-    // }
-  }
-
-}
 
 void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
                               int cx, int cy, float *o0, float *o1, float* o2)
@@ -265,7 +179,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
 
 }
 
-/* Horribly inefficient fill routine */
+// Horribly inefficient fill routine for testing
 void fill(unsigned int val)
 {
   if (!initialised) return;
@@ -274,6 +188,7 @@ void fill(unsigned int val)
     heap_ptr[t] = val;
 }
 
+// More test code, not used in the program
 inline int pset(int x, int y, unsigned int val)
 {
   // Quick reject test
@@ -287,6 +202,7 @@ inline int pset(int x, int y, unsigned int val)
   return 29;
 }
 
+// Yet more test code, not used in the program
 void vline(int x, int y1, int y2, unsigned int val)
 {
   if (!initialised) return;
