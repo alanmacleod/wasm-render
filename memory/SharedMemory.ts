@@ -1,6 +1,12 @@
 
 import {WasmInstance}   from '../core/main.ext';
 
+//  SharedMemory.ts
+//        Allows sharing a pool of memory between Javascript and WebAssembly
+//        Necessary for fast real-time rasteriser switching
+//        and for communication between C and JS
+//        Uses 50% less memory than the alternative, obviously
+
 export default class SharedMemory
 {
   private _buffer: Uint8ClampedArray;

@@ -7,6 +7,8 @@ import Mesh                         from '../mesh/Mesh';
 import {BYTES_PER_PIXEL, INT32,
         ALPHA_MAGIC_NUMBER}         from '../core/Sym';
 
+// WasmRasteriser.ts
+//              Mostly a skeleton class to hook up the WebAssembly funcs               
 
 export default class WasmRasteriser implements IRasteriser
 {

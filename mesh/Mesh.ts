@@ -2,6 +2,11 @@
 import Matrix   from  '../math/Matrix';
 import Texture  from  '../memory/Texture';
 
+// Mesh.ts
+//        Represents a simple 3d model with a texture(s)
+//        Just using a box for now, but can handle arbitrary 3d models easily.
+//
+
 export default class Mesh
 {
   public vertices:number[][];

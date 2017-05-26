@@ -1,5 +1,8 @@
 
-// import Mesh     from '../mesh/Mesh';
+// IRasteriser.ts
+//              Common interface for Device() to use allowing uniform method
+//              calls and switching between rasterisers
+
 import Texture  from '../memory/Texture';
 
 interface IRasteriser
