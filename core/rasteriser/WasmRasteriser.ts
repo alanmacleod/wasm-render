@@ -115,49 +115,12 @@ export default class WasmRasteriser implements IRasteriser
     if (!tex.ready)
       return;
 
+    // Call the WASM/C code! ....omg it's fast
     this.wasm._tri( points[0][0], points[0][1], points[0][2], uvs[0][0], uvs[0][1],
                     points[1][0], points[1][1], points[1][2], uvs[1][0], uvs[1][1],
                     points[2][0], points[2][1], points[2][2], uvs[2][0], uvs[2][1],
-                    tex.data.pointer, tex.width);
+                    tex.data.pointer, tex.width, light);
 
-    // // No actual rasterisation done here, just buffering the calls to a single
-    // // WASM call stack per frame
-    //
-    // // In Javascript we render wireframe before the texture has loaded
-    // // but for WASM I'll just skip adding the job cos I haven't implemented
-    // // a line routine in C!
-    // if (!tex.ready)
-    //   return;
-    //
-    // if (this.taskno >= MAX_WASM_TASKS_PER_FRAME)
-    // {
-    //   console.warn("Out of task buffer space!");
-    //   return;
-    // }
-    //
-    // let offset = this.taskno * WASM_TASK_NUM_ELEMENTS;
-    // let buff = this.taskbuffer.bufferi32;
-    //
-    // // 1. Add the triangle points to the task buffer (6 ints)
-    // for (let p=0; p<points.length; p++)
-    // {
-    //   let point = points[p];
-    //   let uv = uvs[p];
-    //
-    //   buff[ offset + 0 ] = point[0];
-    //   buff[ offset + 1 ] = point[1];
-    //   buff[ offset + 2 ] = Math.round(uv[0] * 65536); // Let's use fixed point
-    //   buff[ offset + 3 ] = Math.round(uv[1] * 65536); //
-    //
-    //   offset += 4;
-    // }
-    //
-    // // 2. Now for this triangle, provide the texture info
-    //
-    // buff[ offset + 0 ] = tex.data.pointer;
-    // buff[ offset + 1 ] = tex.width;
-    //
-    // this.taskno++;
   }
 
 }

@@ -18,7 +18,7 @@ export interface WasmInstance
  _tri( p0x:number, p0y:number, p0z:number, u0:number, v0:number,
        p1x:number, p1y:number, p1z:number, u1:number, v1:number,
        p2x:number, p2y:number, p2z:number, u2:number, v2:number,
-       texels:number, texwid:number ): void;
+       texels:number, texwid:number, light:number ): void;
 
   // heap
   buffer: ArrayBuffer;

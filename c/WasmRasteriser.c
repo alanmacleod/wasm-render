@@ -24,7 +24,7 @@
 void init( unsigned int *, unsigned int, unsigned int, unsigned int * );
 void exec_jobs ( unsigned int );
 void tri( int, int, float, float,float, int, int,float, float, float,
-                int, int,float,float, float, unsigned char*, unsigned int );
+                int, int,float,float, float, unsigned char*, unsigned int, float );
 void fill( unsigned int );
 int pset( int, int, unsigned int val );
 void vline( int, int, int, unsigned int );
@@ -181,7 +181,7 @@ void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
 void tri( int p0x, int p0y, float p0z, float u0, float v0,
           int p1x, int p1y, float p1z, float u1, float v1,
           int p2x, int p2y, float p2z, float u2, float v2,
-                      unsigned char*texels, unsigned int texwid)
+                      unsigned char*texels, unsigned int texwid, float light)
 {
   //BBOX
   int minx = Math_min(p0x, Math_min(p1x, p2x));
@@ -253,9 +253,9 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
 
       to = ((int)v * texwid << 2) + ((int)u << 2);
 
-      r = texels[ to + 0 ];
-      g = texels[ to + 1 ];
-      b = texels[ to + 2 ];
+      r = Math_min( 255, (int)(((float)texels[ to + 0 ]) * light) );
+      g = Math_min( 255, (int)(((float)texels[ to + 1 ]) * light) );
+      b = Math_min( 255, (int)(((float)texels[ to + 2 ]) * light) );
 
       // Magic number = Alpha = (255 << 24)
       heap_ptr[ y * buffer_width + x ] = 4278190080 + (b << 16) + (g << 8) + r;

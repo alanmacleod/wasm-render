@@ -51,7 +51,6 @@ export default class Device
     this.container.style.position = "relative";
     // this.container.style.border = "1px solid #d0d0d0";
 
-
     this.container.appendChild(c);
 
     c.width = this.width;
