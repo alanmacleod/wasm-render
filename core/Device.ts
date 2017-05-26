@@ -3,10 +3,10 @@
 // Just abstracts the canvas crap
 // Accepts a Uint8 buffer for rendering
 
-import Mesh              from './mesh/Mesh';
-import Vector3           from './Vector3';
-import Matrix            from './Matrix';
-import IRasteriser       from './rasteriser/IRasteriser';
+import Mesh              from '../mesh/Mesh';
+import Vector3           from '../math/Vector3';
+import Matrix            from '../math/Matrix';
+import IRasteriser       from '../rasteriser/IRasteriser';
 import {BYTES_PER_PIXEL} from './Sym';
 
 // rename VideoDevice() as will extend to include texture "memory" etc

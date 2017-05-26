@@ -1,5 +1,5 @@
 
-import {WasmInstance}   from './main.ext';
+import {WasmInstance}   from '../core/main.ext';
 
 export default class SharedMemory
 {

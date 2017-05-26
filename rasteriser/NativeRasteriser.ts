@@ -4,12 +4,12 @@
 import IRasteriser            from './IRasteriser';
 import Clip                   from './Clip';
 import Mesh                   from '../mesh/Mesh';
-import Texture                from '../Texture';
-import Vector2                from '../Vector2';
-import Vector3                from '../Vector3';
+import Texture                from '../memory/Texture';
+import Vector2                from '../math/Vector2';
+import Vector3                from '../math/Vector3';
 import {BYTES_PER_PIXEL, BIT_SHIFT_PER_PIXEL,
-        ALPHA_MAGIC_NUMBER}   from '../Sym';
-import Matrix                 from '../Matrix';
+        ALPHA_MAGIC_NUMBER}   from '../core/Sym';
+import Matrix                 from '../math/Matrix';
 
 
 export default class NativeRasteriser implements IRasteriser

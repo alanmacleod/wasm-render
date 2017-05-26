@@ -1,14 +1,14 @@
 
-import Mesh                           from './mesh/Mesh';
-import WasmLoader                     from './WasmLoader';
-import Texture                        from './Texture';
-import StatsGraph, {StatsMode}        from './StatsGraph';
-import NativeRasteriser               from './rasteriser/NativeRasteriser';
-import WasmRasteriser                 from './rasteriser/WasmRasteriser';
+import Mesh                           from '../mesh/Mesh';
+import WasmLoader                     from '../util/WasmLoader';
+import Texture                        from '../memory/Texture';
+import StatsGraph, {StatsMode}        from '../util/StatsGraph';
+import NativeRasteriser               from '../rasteriser/NativeRasteriser';
+import WasmRasteriser                 from '../rasteriser/WasmRasteriser';
 import {WasmInstance}                 from './main.ext';
 import Device                         from './Device';
-import Matrix                         from './Matrix';
-import Vector2                        from './Vector2';
+import Matrix                         from '../math/Matrix';
+import Vector2                        from '../math/Vector2';
 
 const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * 4;

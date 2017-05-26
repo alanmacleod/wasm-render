@@ -1,6 +1,6 @@
 
-import Matrix   from  '../Matrix';
-import Texture  from  '../Texture';
+import Matrix   from  '../math/Matrix';
+import Texture  from  '../memory/Texture';
 
 export default class Mesh
 {

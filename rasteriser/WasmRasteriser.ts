@@ -1,11 +1,11 @@
 
 import IRasteriser                  from './IRasteriser';
-import Texture                      from '../Texture';
-import SharedMemory                 from '../SharedMemory'
-import {WasmInstance}               from '../main.ext';
+import Texture                      from '../memory/Texture';
+import SharedMemory                 from '../memory/SharedMemory'
+import {WasmInstance}               from '../core/main.ext';
 import Mesh                         from '../mesh/Mesh';
 import {BYTES_PER_PIXEL, INT32,
-        ALPHA_MAGIC_NUMBER}         from '../Sym';
+        ALPHA_MAGIC_NUMBER}         from '../core/Sym';
 
 
 export default class WasmRasteriser implements IRasteriser

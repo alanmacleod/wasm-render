@@ -1,7 +1,7 @@
 
 import SharedMemory         from './SharedMemory'
-import {WasmInstance}       from './main.ext';
-import {BYTES_PER_PIXEL}    from './Sym';
+import {WasmInstance}       from '../core/main.ext';
+import {BYTES_PER_PIXEL}    from '../core/Sym';
 
 // Texture data is essentially stored in a plain Uint8 array
 // located on the WASM heap via SharedMemory so accessible to JS and WASM code

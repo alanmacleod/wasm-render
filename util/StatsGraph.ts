@@ -1,6 +1,6 @@
 
 import * as Stats       from '../lib/stats.mod.js';
-import {ThreeStats}     from './main.ext';
+import {ThreeStats}     from '../core/main.ext';
 
 export default class StatsGraph
 {
