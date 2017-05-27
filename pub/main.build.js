@@ -626,7 +626,11 @@ class Mesh {
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Clip__ = __webpack_require__(13);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__core_Sym__ = __webpack_require__(0);
-// "Native" probably a bit misleading. More of a "Reference" rasteriser
+// NativeRasteriser.ts
+//       Alan MacLeod 2017, alanamacleod.eu, github.com/alanmacleod
+//       "Native" probably a bit misleading. More of a "Reference" rasteriser
+//       Inspired and influenced by portions of Dmitry V. Sokolov's course
+//       work: https://github.com/ssloy
 
 
 class NativeRasteriser {
@@ -642,11 +646,13 @@ class NativeRasteriser {
         this.hheight = (h / 2) >> 0;
         this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_1__core_Sym__["a" /* BYTES_PER_PIXEL */];
         this.buffer = new Uint8ClampedArray(this.pagesize);
+        this.buffer32 = new Int32Array(this.buffer);
         this.zbuffer = new Float32Array(w * h);
         this.ready = true;
     }
     begin() {
         this.buffer.fill(0);
+        //  this.buffer32.fill(ALPHA_MAGIC_NUMBER + 255);
     }
     end() {
         this.zbuffer.fill(0);
@@ -766,10 +772,8 @@ class NativeRasteriser {
             );
         }
     }
-    // Draw a triangle using a bbox with barycentric coord rejection
-    // Heard about this method recently, I always used the top/bottom half tri
-    // approach which I'm told is a little old school. I believe GPUs do it this
-    // way because it's easier to exec in parallel...
+    // Uses a barycentric coord technique of rasterisation I found here
+    // in this excellent course/repo: https://github.com/ssloy/tinyrenderer
     tri(points, uvs, light, tex) {
         // Texture hasn't loaded yet, draw an outline
         // console.log(tex.ready);

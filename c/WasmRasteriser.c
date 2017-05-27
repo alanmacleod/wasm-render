@@ -1,9 +1,13 @@
 
+
 // WasmRasteriser.c
 //        Triangle texture mapper with correct perspective and simple lighting
 //        Alan MacLeod, 2017
 //        alanmacleod.eu
 //        github.com/alanmacleod
+//
+//       Inspired by portions of Dmitry V. Sokolov' course work: https://github.com/ssloy
+//
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -98,6 +102,9 @@ void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
   *o1 = ((float)bc1) * iz;
   *o2 = ((float)bc0) * iz;
 }
+
+// Uses a barycentric coord technique of rasterisation I found here
+// in this excellent course/repo: https://github.com/ssloy/tinyrenderer
 
 void tri( int p0x, int p0y, float p0z, float u0, float v0,
           int p1x, int p1y, float p1z, float u1, float v1,

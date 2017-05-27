@@ -1,5 +1,11 @@
 
-// "Native" probably a bit misleading. More of a "Reference" rasteriser
+
+// NativeRasteriser.ts
+//       Alan MacLeod 2017, alanamacleod.eu, github.com/alanmacleod
+//       "Native" probably a bit misleading. More of a "Reference" rasteriser
+//       Inspired and influenced by portions of Dmitry V. Sokolov's course
+//       work: https://github.com/ssloy
+
 
 import IRasteriser            from './IRasteriser';
 import Clip                   from './Clip';
@@ -27,6 +33,7 @@ export default class NativeRasteriser implements IRasteriser
   // TODO: Perhaps use Uint32 bytepack view for cleaner/faster/easier writes?
   // Real TypedArray to emulate wasm heap
   public buffer: Uint8ClampedArray;
+  private buffer32: Int32Array;
   public ready: boolean;
 
   constructor()
@@ -41,13 +48,16 @@ export default class NativeRasteriser implements IRasteriser
     this.height = h; this.hheight = (h/2)>>0;
     this.pagesize = w * h * BYTES_PER_PIXEL;
     this.buffer = new Uint8ClampedArray( this.pagesize );
+    this.buffer32 = new Int32Array(this.buffer);
+
     this.zbuffer = new Float32Array( w * h );
     this.ready = true;
   }
 
   public begin()
   {
-    this.buffer.fill(0);
+   this.buffer.fill(0);
+  //  this.buffer32.fill(ALPHA_MAGIC_NUMBER + 255);
   }
 
   public end()
@@ -188,10 +198,8 @@ export default class NativeRasteriser implements IRasteriser
 
   }
 
-  // Draw a triangle using a bbox with barycentric coord rejection
-  // Heard about this method recently, I always used the top/bottom half tri
-  // approach which I'm told is a little old school. I believe GPUs do it this
-  // way because it's easier to exec in parallel...
+  // Uses a barycentric coord technique of rasterisation I found here
+  // in this excellent course/repo: https://github.com/ssloy/tinyrenderer
 
   public tri(points:number[][], uvs:number[][], light:number, tex: Texture): void
   {
@@ -276,7 +284,6 @@ export default class NativeRasteriser implements IRasteriser
 
     bc0 = va1 * vb2 - va2 * vb1;
     bc1 = va2 * vb0 - va0 * vb2;
-
 
     // Scan a simple bbox
     for ( P[1]=miny; P[1]<=maxy; P[1]++ )
