@@ -11,6 +11,8 @@
 #include "WasmRasteriser.h"
 
 #define BYTES_PER_PIXEL 4
+#define BIT_SHIFT_PER_PIXEL 2
+
 
 /* IMPORTANT NOTE: printf() from here (to browser console) *ONLY WORKS IF* you
                 include a newline escape char '\n' in the string otherwise
@@ -108,7 +110,8 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   int miny = Math_min(p0y, Math_min(p1y, p2y));
   int maxy = Math_max(p0y, Math_max(p1y, p2y));
 
-  int texmaxu = 511, texmaxv = 511;
+  // Cheating here, assumes square
+  int texmaxu = texwid-1, texmaxv = tewxwid-1;
 
   // Clipping
   minx = Math_max(0, minx);
@@ -158,16 +161,15 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   int bc1;
   int bc2 = va0 * vb1 - va1 * vb0;
 
-  float o0, o1, o2, oiz;
+  if (Math_abs(bc2) < 1)
+    return;
 
+  float o0, o1, o2, oiz;
 
   for (y=miny; y<=maxy; y++)
   {
     for (x=minx; x<=maxx; x++)
     {
-      if (Math_abs(bc2) < 1)
-        continue;
-
       va2 = p0x - x;
       vb2 = p0y - y;
 
@@ -198,7 +200,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
       u = ((inv_Pu / inv_Pz) * texmaxu);
       v = ((inv_Pv / inv_Pz) * texmaxv);
 
-      to = ((int)v * texwid << 2) + ((int)u << 2);
+      to = ((int)v * texwid << BIT_SHIFT_PER_PIXEL) + ((int)u << BIT_SHIFT_PER_PIXEL);
 
       r = Math_min( 255, (int)(((float)texels[ to + 0 ]) * light) );
       g = Math_min( 255, (int)(((float)texels[ to + 1 ]) * light) );
@@ -206,7 +208,6 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
 
       // Magic number = Alpha = (255 << 24)
       heap_ptr[ y * buffer_width + x ] = 4278190080 + (b << 16) + (g << 8) + r;
-
     }
   }
 
