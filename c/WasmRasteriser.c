@@ -111,7 +111,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   int maxy = Math_max(p0y, Math_max(p1y, p2y));
 
   // Cheating here, assumes square
-  int texmaxu = texwid-1, texmaxv = tewxwid-1;
+  int texmaxu = texwid-1, texmaxv = texwid-1;
 
   // Clipping
   minx = Math_max(0, minx);
@@ -166,7 +166,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
 
   float oiz = 1 / (float)bc2;
 
-  float o0, o1, o2, oiz;
+  float o0, o1, o2;
 
   // Two divides per pixel, about as good as we can get with persp correct barycentres
   for (y=miny; y<=maxy; y++)
