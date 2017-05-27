@@ -59,6 +59,7 @@ void init(unsigned int *buffer, unsigned int width, unsigned int height)
 }
 
 
+// No longer used, now expanded inline inside tri() function
 void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
                               int cx, int cy, float *o0, float *o1, float* o2)
 {

@@ -204,7 +204,7 @@ export default class NativeRasteriser implements IRasteriser
   public tri(points:number[][], uvs:number[][], light:number, tex: Texture): void
   {
     // Texture hasn't loaded yet, draw an outline
-    // console.log(tex.ready);
+
     if (!tex.ready)
     {
       this.wireframe(points);
@@ -262,9 +262,6 @@ export default class NativeRasteriser implements IRasteriser
     let inv_Pu = 0;
     let inv_Pv = 0;
 
-
-    // a = points[0], b = points[1], c = points[2]
-
     let va0 = points[2][0] - points[0][0];
     let va1 = points[1][0] - points[0][0];
     let va2;
@@ -303,9 +300,7 @@ export default class NativeRasteriser implements IRasteriser
         o[0] = 1.0 - (bc0 + bc1) * iz;
         o[1] = bc1 * iz;
         o[2] = bc0 * iz;
-
-
-        // Check [0] first
+  
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
         // Calc weighted values
