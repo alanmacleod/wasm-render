@@ -164,8 +164,11 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   if (Math_abs(bc2) < 1)
     return;
 
+  float oiz = 1 / (float)bc2;
+
   float o0, o1, o2, oiz;
 
+  // Two divides per pixel, about as good as we can get with persp correct barycentres
   for (y=miny; y<=maxy; y++)
   {
     for (x=minx; x<=maxx; x++)
@@ -175,8 +178,6 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
 
       bc0 = va1 * vb2 - va2 * vb1;
       bc1 = va2 * vb0 - va0 * vb2;
-
-      float oiz = 1 / (float)bc2;
 
       o0 = 1.0 - ((float)(bc0 + bc1)) * oiz;
       o1 = ((float)bc1) * oiz;

@@ -624,11 +624,9 @@ class Mesh {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Clip__ = __webpack_require__(14);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__math_Vector2__ = __webpack_require__(13);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__core_Sym__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Clip__ = __webpack_require__(13);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__core_Sym__ = __webpack_require__(0);
 // "Native" probably a bit misleading. More of a "Reference" rasteriser
-
 
 
 class NativeRasteriser {
@@ -642,7 +640,7 @@ class NativeRasteriser {
         this.hwidth = (w / 2) >> 0;
         this.height = h;
         this.hheight = (h / 2) >> 0;
-        this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_2__core_Sym__["a" /* BYTES_PER_PIXEL */];
+        this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_1__core_Sym__["a" /* BYTES_PER_PIXEL */];
         this.buffer = new Uint8ClampedArray(this.pagesize);
         this.zbuffer = new Float32Array(w * h);
         this.ready = true;
@@ -825,12 +823,34 @@ class NativeRasteriser {
         let inv_Pz = 0;
         let inv_Pu = 0;
         let inv_Pv = 0;
+        // a = points[0], b = points[1], c = points[2]
+        let va0 = points[2][0] - points[0][0];
+        let va1 = points[1][0] - points[0][0];
+        let va2;
+        let vb0 = points[2][1] - points[0][1];
+        let vb1 = points[1][1] - points[0][1];
+        let vb2;
+        let bc0;
+        let bc1;
+        let bc2 = va0 * vb1 - va1 * vb0;
+        let iz = 1 / bc2;
+        if (Math.abs(bc2) < 1)
+            return;
+        bc0 = va1 * vb2 - va2 * vb1;
+        bc1 = va2 * vb0 - va0 * vb2;
         // Scan a simple bbox
         for (P[1] = miny; P[1] <= maxy; P[1]++) {
             for (P[0] = minx; P[0] <= maxx; P[0]++) {
                 // barycentric is _all_ about Barry
-                // Can be optimised by unrolling this call
-                __WEBPACK_IMPORTED_MODULE_1__math_Vector2__["a" /* default */].barycentric(P, points[0], points[1], points[2], o);
+                // Can be optimised by unrolling this call (- which I later did)
+                // Vector2.barycentric( P, points[0], points[1], points[2], o );
+                va2 = points[0][0] - P[0];
+                vb2 = points[0][1] - P[1];
+                bc0 = va1 * vb2 - va2 * vb1;
+                bc1 = va2 * vb0 - va0 * vb2;
+                o[0] = 1.0 - (bc0 + bc1) * iz;
+                o[1] = bc1 * iz;
+                o[2] = bc0 * iz;
                 // Check [0] first
                 if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
@@ -852,7 +872,7 @@ class NativeRasteriser {
                 // Divide u/z & v/z by 1/z to get perspective correct UV coords
                 u = ((inv_Pu / inv_Pz) * texmaxu) >> 0;
                 v = ((inv_Pv / inv_Pz) * texmaxv) >> 0;
-                let c = (v * texw << __WEBPACK_IMPORTED_MODULE_2__core_Sym__["c" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_2__core_Sym__["c" /* BIT_SHIFT_PER_PIXEL */]);
+                let c = (v * texw << __WEBPACK_IMPORTED_MODULE_1__core_Sym__["c" /* BIT_SHIFT_PER_PIXEL */]) + (u << __WEBPACK_IMPORTED_MODULE_1__core_Sym__["c" /* BIT_SHIFT_PER_PIXEL */]);
                 let r = texels[c + 0] * light;
                 let g = texels[c + 1] * light;
                 let b = texels[c + 2] * light;
@@ -861,7 +881,7 @@ class NativeRasteriser {
         }
     }
     pset(x, y, r, g, b) {
-        let o = (y >> 0) * this.width * __WEBPACK_IMPORTED_MODULE_2__core_Sym__["a" /* BYTES_PER_PIXEL */] + (x >> 0) * __WEBPACK_IMPORTED_MODULE_2__core_Sym__["a" /* BYTES_PER_PIXEL */];
+        let o = (y >> 0) * this.width * __WEBPACK_IMPORTED_MODULE_1__core_Sym__["a" /* BYTES_PER_PIXEL */] + (x >> 0) * __WEBPACK_IMPORTED_MODULE_1__core_Sym__["a" /* BYTES_PER_PIXEL */];
         this.buffer[o + 0] = r;
         this.buffer[o + 1] = g;
         this.buffer[o + 2] = b;
@@ -1381,61 +1401,6 @@ function runbenchmarks(wasm)
 
 /***/ }),
 /* 13 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Vector3__ = __webpack_require__(2);
-
-// Not convinced I need this class anywhere. Schedule for review/delete.
-const X = 0, Y = 1;
-class Vector2 {
-    constructor(x = 0, y = 0) {
-        this.x = x;
-        this.y = y;
-    }
-    add(b) {
-        return new Vector2(b.x + this.x, b.y + this.y);
-    }
-    sub(b) {
-        return new Vector2(this.x - b.x, this.y - b.y);
-    }
-    dot(b) {
-        return (this.x * b.x) + (this.y * b.y);
-    }
-    static barycentric(P, a, b, c, o) {
-        let va = [c[0] - a[0], b[0] - a[0], a[0] - P[0]];
-        let vb = [c[1] - a[1], b[1] - a[1], a[1] - P[1]];
-        let bc = [0, 0, 0];
-        __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */].cross(va, vb, bc);
-        // Outside
-        if (Math.abs(bc[2]) < 1) {
-            o[0] = -1.0;
-            o[1] = -1.0;
-            o[2] = -1.0;
-            return;
-        }
-        let iz = 1 / bc[2];
-        o[0] = 1.0 - (bc[0] + bc[1]) * iz;
-        o[1] = bc[1] * iz;
-        o[2] = bc[0] * iz;
-    }
-    barycentric(a, b, c) {
-        let va = [c.x - a.x, b.x - a.x, a.x - this.x];
-        let vb = [c.y - a.y, b.y - a.y, a.y - this.y];
-        let bc = [0, 0, 0];
-        __WEBPACK_IMPORTED_MODULE_0__Vector3__["a" /* default */].cross(va, vb, bc);
-        if (Math.abs(bc[2]) < 1)
-            return [-1, 1, 1];
-        let iz = 1 / bc[2];
-        return [1.0 - (bc[0] + bc[1]) * iz, bc[1] * iz, bc[0] * iz];
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Vector2;
-
-
-
-/***/ }),
-/* 14 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";

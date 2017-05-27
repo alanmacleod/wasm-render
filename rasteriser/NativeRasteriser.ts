@@ -254,14 +254,49 @@ export default class NativeRasteriser implements IRasteriser
     let inv_Pu = 0;
     let inv_Pv = 0;
 
+
+    // a = points[0], b = points[1], c = points[2]
+
+    let va0 = points[2][0] - points[0][0];
+    let va1 = points[1][0] - points[0][0];
+    let va2;
+
+    let vb0 = points[2][1] - points[0][1];
+    let vb1 = points[1][1] - points[0][1];
+    let vb2;
+
+    let bc0;
+    let bc1;
+    let bc2 = va0 * vb1 - va1 * vb0;
+
+    let iz = 1 / bc2;
+
+    if (Math.abs(bc2) < 1)
+      return;
+
+    bc0 = va1 * vb2 - va2 * vb1;
+    bc1 = va2 * vb0 - va0 * vb2;
+
+
     // Scan a simple bbox
     for ( P[1]=miny; P[1]<=maxy; P[1]++ )
     {
       for ( P[0]=minx; P[0]<=maxx; P[0]++ )
       {
         // barycentric is _all_ about Barry
-        // Can be optimised by unrolling this call
-        Vector2.barycentric( P, points[0], points[1], points[2], o );
+        // Can be optimised by unrolling this call (- which I later did)
+        // Vector2.barycentric( P, points[0], points[1], points[2], o );
+
+        va2 = points[0][0] - P[0];
+        vb2 = points[0][1] - P[1];
+
+        bc0 = va1 * vb2 - va2 * vb1;
+        bc1 = va2 * vb0 - va0 * vb2;
+
+        o[0] = 1.0 - (bc0 + bc1) * iz;
+        o[1] = bc1 * iz;
+        o[2] = bc0 * iz;
+
 
         // Check [0] first
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
