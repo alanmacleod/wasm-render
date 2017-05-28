@@ -55,8 +55,6 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   let device = new Device( SCR_WIDTH, SCR_HEIGHT, rasterisers[currentraster] );
   device.create();
 
-  // device.switchrasteriser(wraster)
-
   stats = new StatsGraph(StatsMode.MS, device.container, () => {
     currentraster = 1 - currentraster;
     device.use(rasterisers[currentraster]);

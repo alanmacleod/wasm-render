@@ -149,7 +149,9 @@ export default class Device
 
       let power = Vector3.dot(fnormal, light);
 
+      // Instead of rasterising immediately, accumulate face normals and then
       // Rasterise if visible etc
+      
       if (power > 0 && m.textures.length > 0)
       {
         // Call the rasteriser! JS || WASM
