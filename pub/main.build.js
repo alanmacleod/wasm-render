@@ -856,12 +856,12 @@ class NativeRasteriser {
         let inv_p1z = 1 / points[1][2];
         let inv_p2z = 1 / points[2][2];
         // FIXME below: just * by inv_p0z etc you idiot.
-        let inv_p0u = uvs[0][0] / points[0][2];
-        let inv_p1u = uvs[1][0] / points[1][2];
-        let inv_p2u = uvs[2][0] / points[2][2];
-        let inv_p0v = uvs[0][1] / points[0][2];
-        let inv_p1v = uvs[1][1] / points[1][2];
-        let inv_p2v = uvs[2][1] / points[2][2];
+        let inv_p0u = uvs[0][0] * inv_p0z;
+        let inv_p1u = uvs[1][0] * inv_p1z;
+        let inv_p2u = uvs[2][0] * inv_p2z;
+        let inv_p0v = uvs[0][1] * inv_p0z;
+        let inv_p1v = uvs[1][1] * inv_p1z;
+        let inv_p2v = uvs[2][1] * inv_p2z;
         let inv_Pz = 0;
         let inv_Pu = 0;
         let inv_Pv = 0;
