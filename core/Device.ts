@@ -156,6 +156,7 @@ export default class Device
       {
         //console.log("uvtex", m.uvtextures);
         // Call the rasteriser! JS || WASM
+
         this.rasteriser.tri(
           triscreen, m.uvs[fi], power * saturation,
           m.textures[m.uvtextures[fi]], m.wireframe

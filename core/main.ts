@@ -25,7 +25,7 @@ let currentraster = RASTERISER_NATIVE;
 // Create and position simple test object
 let box = new Mesh({wireframe:false});
 box.load("./obj/african_head.json");
-box.boxgeometry( 1, 1, 1 );
+// box.boxgeometry( 1, 1, 1 );
 box.set( [0,0,6], [0,0,0] );
 
 // Eye -> Screen matrices
@@ -49,7 +49,7 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   rasterisers[1] = new WasmRasteriser( wasm );
 
   // Load the texture here because the WASM instance is needed for SharedMem
-  let t = new Texture( wasm, "./img/radicrate.jpg" );
+  let t = new Texture( wasm, "./img/african_head_diffuse_180.jpg" );
   box.textures.push( t );
 
   // The 'device' calls the rasterisers and handles the Canvas

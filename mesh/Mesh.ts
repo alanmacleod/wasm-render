@@ -80,12 +80,13 @@ export default class Mesh
 
         this.vertices = json.vertices;
         this.faces = json.faces;
+
+        this.uvs = json.uvs;
+
         this.uvtextures = [];
 
         for (let f=0; f<json.faces.length; f++)
           this.uvtextures.push(0);
-
-        this.uvs = json.uvs;
 
       });
 

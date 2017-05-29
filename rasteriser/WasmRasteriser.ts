@@ -8,7 +8,7 @@ import {BYTES_PER_PIXEL, INT32,
         ALPHA_MAGIC_NUMBER}         from '../core/Sym';
 
 // WasmRasteriser.ts
-//              Mostly a skeleton class to hook up the WebAssembly funcs               
+//              Mostly a skeleton class to hook up the WebAssembly funcs
 
 export default class WasmRasteriser implements IRasteriser
 {
@@ -83,7 +83,7 @@ export default class WasmRasteriser implements IRasteriser
     this.wasm._fill(this.rgbpack(r,g,b));
   }
 
-  public tri(points:number[][], uvs:number[][], light:number, tex: Texture): void
+  public tri(points:number[][], uvs:number[][], light:number, tex: Texture, wireframe?:boolean): void
   {
     // In Javascript we render wireframe before the texture has loaded
     // but for WASM I'll just skip adding the job cos I haven't implemented
@@ -91,6 +91,11 @@ export default class WasmRasteriser implements IRasteriser
     if (!tex.ready)
       return;
 
+      // console.log("tri",  points[0][0], points[0][1], points[0][2], uvs[0][0], uvs[0][1],
+      //                 points[1][0], points[1][1], points[1][2], uvs[1][0], uvs[1][1],
+      //                 points[2][0], points[2][1], points[2][2], uvs[2][0], uvs[2][1],
+      //                 tex.data.pointer, tex.width, light);
+      //
     // Call the WASM/C code! ....omg it's fast
     this.wasm._tri( points[0][0], points[0][1], points[0][2], uvs[0][0], uvs[0][1],
                     points[1][0], points[1][1], points[1][2], uvs[1][0], uvs[1][1],

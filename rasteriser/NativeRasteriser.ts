@@ -195,7 +195,6 @@ export default class NativeRasteriser implements IRasteriser
         true            // Clipping?
       );
     }
-
   }
 
   // Uses a barycentric coord technique of rasterisation I found here
@@ -204,7 +203,6 @@ export default class NativeRasteriser implements IRasteriser
   public tri(points:number[][], uvs:number[][], light:number, tex: Texture, wireframe?:boolean): void
   {
     // Texture hasn't loaded yet, draw an outline
-
     if (!tex.ready || wireframe)
     {
       this.wireframe(points);
@@ -262,22 +260,23 @@ export default class NativeRasteriser implements IRasteriser
     let inv_Pu = 0;
     let inv_Pv = 0;
 
+    // Barycentre data we can precalc and cache outside inner loop
     let va0 = points[2][0] - points[0][0];
     let va1 = points[1][0] - points[0][0];
-    let va2;
+    let va2; // <- needs perpixel calc
 
     let vb0 = points[2][1] - points[0][1];
     let vb1 = points[1][1] - points[0][1];
-    let vb2;
+    let vb2; // <- needs perpixel calc
 
-    let bc0;
-    let bc1;
+    let bc0; // <- needs perpixel calc
+    let bc1; // <- needs perpixel calc
     let bc2 = va0 * vb1 - va1 * vb0;
-
-    let iz = 1 / bc2;
 
     if (Math.abs(bc2) < 1)
       return;
+
+    let iz = 1 / bc2;
 
     bc0 = va1 * vb2 - va2 * vb1;
     bc1 = va2 * vb0 - va0 * vb2;
@@ -291,6 +290,7 @@ export default class NativeRasteriser implements IRasteriser
         // Can be optimised by unrolling this call (- which I later did)
         // Vector2.barycentric( P, points[0], points[1], points[2], o );
 
+        // Below: fragmented and unrolled barycentric() calcs:
         va2 = points[0][0] - P[0];
         vb2 = points[0][1] - P[1];
 
@@ -304,6 +304,7 @@ export default class NativeRasteriser implements IRasteriser
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
         // Calc weighted values
+        // including linear -> persp correct 1/u div 1/z
         inv_Pz =  inv_p0z * o[0] +    // 1/z
                   inv_p1z * o[1] +
                   inv_p2z * o[2];
@@ -336,6 +337,7 @@ export default class NativeRasteriser implements IRasteriser
 
   }
 
+  // Smile if you remember QBASIC
   public pset(x: number, y: number, r: number, g: number, b: number): void
   {
     let o:number = (y>>0) * this.width * BYTES_PER_PIXEL + (x>>0) * BYTES_PER_PIXEL;

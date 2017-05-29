@@ -576,10 +576,10 @@ class Mesh {
             .then(json => {
             this.vertices = json.vertices;
             this.faces = json.faces;
+            this.uvs = json.uvs;
             this.uvtextures = [];
             for (let f = 0; f < json.faces.length; f++)
                 this.uvtextures.push(0);
-            this.uvs = json.uvs;
         });
     }
     boxgeometry(width, height, depth) {
@@ -844,18 +844,19 @@ class NativeRasteriser {
         let inv_Pz = 0;
         let inv_Pu = 0;
         let inv_Pv = 0;
+        // Barycentre data we can precalc and cache outside inner loop
         let va0 = points[2][0] - points[0][0];
         let va1 = points[1][0] - points[0][0];
-        let va2;
+        let va2; // <- needs perpixel calc
         let vb0 = points[2][1] - points[0][1];
         let vb1 = points[1][1] - points[0][1];
-        let vb2;
-        let bc0;
-        let bc1;
+        let vb2; // <- needs perpixel calc
+        let bc0; // <- needs perpixel calc
+        let bc1; // <- needs perpixel calc
         let bc2 = va0 * vb1 - va1 * vb0;
-        let iz = 1 / bc2;
         if (Math.abs(bc2) < 1)
             return;
+        let iz = 1 / bc2;
         bc0 = va1 * vb2 - va2 * vb1;
         bc1 = va2 * vb0 - va0 * vb2;
         // Scan a simple bbox
@@ -864,6 +865,7 @@ class NativeRasteriser {
                 // barycentric is _all_ about Barry
                 // Can be optimised by unrolling this call (- which I later did)
                 // Vector2.barycentric( P, points[0], points[1], points[2], o );
+                // Below: fragmented and unrolled barycentric() calcs:
                 va2 = points[0][0] - P[0];
                 vb2 = points[0][1] - P[1];
                 bc0 = va1 * vb2 - va2 * vb1;
@@ -874,6 +876,7 @@ class NativeRasteriser {
                 if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
                 // Calc weighted values
+                // including linear -> persp correct 1/u div 1/z
                 inv_Pz = inv_p0z * o[0] +
                     inv_p1z * o[1] +
                     inv_p2z * o[2];
@@ -899,6 +902,7 @@ class NativeRasteriser {
             }
         }
     }
+    // Smile if you remember QBASIC
     pset(x, y, r, g, b) {
         let o = (y >> 0) * this.width * __WEBPACK_IMPORTED_MODULE_1__core_Sym__["a" /* BYTES_PER_PIXEL */] + (x >> 0) * __WEBPACK_IMPORTED_MODULE_1__core_Sym__["a" /* BYTES_PER_PIXEL */];
         this.buffer[o + 0] = r;
@@ -921,7 +925,7 @@ class NativeRasteriser {
 
 
 // WasmRasteriser.ts
-//              Mostly a skeleton class to hook up the WebAssembly funcs               
+//              Mostly a skeleton class to hook up the WebAssembly funcs
 class WasmRasteriser {
     constructor(wasm) {
         this.wasm = wasm;
@@ -964,12 +968,17 @@ class WasmRasteriser {
         //TODO: use memset!
         this.wasm._fill(this.rgbpack(r, g, b));
     }
-    tri(points, uvs, light, tex) {
+    tri(points, uvs, light, tex, wireframe) {
         // In Javascript we render wireframe before the texture has loaded
         // but for WASM I'll just skip adding the job cos I haven't implemented
         // a line routine in C!
         if (!tex.ready)
             return;
+        // console.log("tri",  points[0][0], points[0][1], points[0][2], uvs[0][0], uvs[0][1],
+        //                 points[1][0], points[1][1], points[1][2], uvs[1][0], uvs[1][1],
+        //                 points[2][0], points[2][1], points[2][2], uvs[2][0], uvs[2][1],
+        //                 tex.data.pointer, tex.width, light);
+        //
         // Call the WASM/C code! ....omg it's fast
         this.wasm._tri(points[0][0], points[0][1], points[0][2], uvs[0][0], uvs[0][1], points[1][0], points[1][1], points[1][2], uvs[1][0], uvs[1][1], points[2][0], points[2][1], points[2][2], uvs[2][0], uvs[2][1], tex.data.pointer, tex.width, light);
     }
@@ -1314,7 +1323,7 @@ let currentraster = RASTERISER_NATIVE;
 // Create and position simple test object
 let box = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]({ wireframe: false });
 box.load("./obj/african_head.json");
-box.boxgeometry(1, 1, 1);
+// box.boxgeometry( 1, 1, 1 );
 box.set([0, 0, 6], [0, 0, 0]);
 // Eye -> Screen matrices
 let mprojection = __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].create(); // Camera -> Screen
@@ -1330,7 +1339,7 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     rasterisers[0] = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__["a" /* default */]();
     rasterisers[1] = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);
     // Load the texture here because the WASM instance is needed for SharedMem
-    let t = new __WEBPACK_IMPORTED_MODULE_2__memory_Texture__["a" /* default */](wasm, "./img/radicrate.jpg");
+    let t = new __WEBPACK_IMPORTED_MODULE_2__memory_Texture__["a" /* default */](wasm, "./img/african_head_diffuse_180.jpg");
     box.textures.push(t);
     // The 'device' calls the rasterisers and handles the Canvas
     let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, rasterisers[currentraster]);
