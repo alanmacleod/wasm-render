@@ -29,11 +29,12 @@ export default class NativeRasteriser implements IRasteriser
   // Use a SharedMemory?
   private zbuffer: Float32Array;
 
+  // View into `buffer`. For fast clearing with a colour.
+  private buffer32: Uint32Array;
+
   // IRasteriser members
-  // TODO: Perhaps use Uint32 bytepack view for cleaner/faster/easier writes?
   // Real TypedArray to emulate wasm heap
   public buffer: Uint8ClampedArray;
-  private buffer32: Uint32Array;
   public ready: boolean;
 
   constructor()
@@ -55,14 +56,9 @@ export default class NativeRasteriser implements IRasteriser
 
   public begin()
   {
-  // this.buffer.fill(0);
-  ////  this.buffer32.fill(ALPHA_MAGIC_NUMBER + 255);
-  this.buffer32.fill(ALPHA_MAGIC_NUMBER); // black
-  }
+    this.zbuffer.fill(0);  // reset Z-buffer at the end of frame
+    this.buffer32.fill(ALPHA_MAGIC_NUMBER); // black
 
-  public end()
-  {
-    this.zbuffer.fill(0);
   }
 
   // Standard Bres' line routine, I've been copying, pasting and translating
@@ -195,6 +191,13 @@ export default class NativeRasteriser implements IRasteriser
         true            // Clipping?
       );
     }
+  }
+
+
+  public testfunction2()
+  {
+      let a = 1;
+    return;
   }
 
   // Uses a barycentric coord technique of rasterisation I found here

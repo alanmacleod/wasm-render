@@ -17,6 +17,7 @@
 #define BYTES_PER_PIXEL 4
 #define BIT_SHIFT_PER_PIXEL 2
 
+#define PERSPECTIVE_CORRECT_MODE
 
 /* IMPORTANT NOTE: printf() from here (to browser console) *ONLY WORKS IF* you
                 include a newline escape char '\n' in the string otherwise
@@ -59,6 +60,11 @@ void init(unsigned int *buffer, float *zbuffer, unsigned int width, unsigned int
   buffer_num_bytes = buffer_num_pixels * BYTES_PER_PIXEL;
 
   initialised = true;
+}
+
+void testfunction()
+{
+  return;
 }
 
 
@@ -142,22 +148,6 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   int to, bo;
 
   int x, y;
-
-  // Perspective correct shizz
-  float inv_p0z = 1 / p0z;
-  float inv_p1z = 1 / p1z;
-  float inv_p2z = 1 / p2z;
-
-  float inv_p0u = u0 * inv_p0z;
-  float inv_p1u = u1 * inv_p1z;
-  float inv_p2u = u2 * inv_p2z;
-
-  float inv_p0v = v0 * inv_p0z;
-  float inv_p1v = v1 * inv_p1z;
-  float inv_p2v = v2 * inv_p2z;
-
-  float inv_Pz, inv_Pu, inv_Pv;
-
   int r, g, b;
 
   // Barycentre setup, cache vectors
@@ -176,6 +166,21 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   if (Math_abs(bc2) < 1) // TODO: move this test before the inv_p0z calcs
     return;
 
+  // Perspective correct shizz
+  float inv_p0z = 1 / p0z;
+  float inv_p1z = 1 / p1z;
+  float inv_p2z = 1 / p2z;
+
+  float inv_p0u = u0 * inv_p0z;
+  float inv_p1u = u1 * inv_p1z;
+  float inv_p2u = u2 * inv_p2z;
+
+  float inv_p0v = v0 * inv_p0z;
+  float inv_p1v = v1 * inv_p1z;
+  float inv_p2v = v2 * inv_p2z;
+
+  float inv_Pz, inv_Pu, inv_Pv;
+
   float oiz = 1 / (float)bc2;
 
   float o0, o1, o2;
@@ -185,6 +190,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   {
     for (x=minx; x<=maxx; x++)
     {
+      bo++;
       va2 = p0x - x;
       vb2 = p0y - y;
 
@@ -210,16 +216,24 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
       heap_zbuffer_ptr[bo] = inv_Pz;
 
       // Definitely going to draw something now, so finish the remaining calcs
-      inv_Pu =  inv_p0u * o0 +
-                inv_p1u * o1 +
-                inv_p2u * o2;
+      #ifdef PERSPECTIVE_CORRECT_MODE
 
-      inv_Pv =  inv_p0v * o0 +
-                inv_p1v * o1 +
-                inv_p2v * o2;
+        inv_Pu =  inv_p0u * o0 +
+                  inv_p1u * o1 +
+                  inv_p2u * o2;
 
-      u = ( (inv_Pu / inv_Pz) * texmaxu );
-      v = ( (inv_Pv / inv_Pz) * texmaxv );
+        inv_Pv =  inv_p0v * o0 +
+                  inv_p1v * o1 +
+                  inv_p2v * o2;
+        u = ( (inv_Pu / inv_Pz) * texmaxu );
+        v = ( (inv_Pv / inv_Pz) * texmaxv );
+
+      #else
+
+        u = (u0 * o0 + u1 * o1 + u2 * o2) * texmaxu;
+        v = (v0 * o0 + v1 * o1 + v2 * o2) * texmaxv;
+
+      #endif
 
       // Texture offset
       to = ((int)v * texwid << BIT_SHIFT_PER_PIXEL) + ((int)u << BIT_SHIFT_PER_PIXEL);

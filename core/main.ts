@@ -20,13 +20,11 @@ let stats;
 let rasterisers = [];
 let currentraster = RASTERISER_NATIVE;
 
-
 // 3D scene setup
 // Create and position simple test object
-let box = new Mesh({wireframe:false});
-box.load("./obj/african_head.json");
-// box.boxgeometry( 1, 1, 1 );
-box.set( [0,0,6], [0,0,0] );
+let mesh = new Mesh({wireframe:false});
+mesh.load("./obj/african_head.json");
+mesh.set( [0,0,5.5], [0,0,0] );
 
 // Eye -> Screen matrices
 let mprojection = Matrix.create(); // Camera -> Screen
@@ -40,7 +38,6 @@ Matrix.lookat( [0,0,12.5], [0,0,0], [0,1,0], mcamera );
 Matrix.concat( [mcamera, mprojection], mtransform );
 
 
-
 // Load the WASM code over the wire
 w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 {
@@ -50,7 +47,7 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
 
   // Load the texture here because the WASM instance is needed for SharedMem
   let t = new Texture( wasm, "./img/african_head_diffuse_180.jpg" );
-  box.textures.push( t );
+  mesh.textures.push( t );
 
   // The 'device' calls the rasterisers and handles the Canvas
   let device = new Device( SCR_WIDTH, SCR_HEIGHT, rasterisers[currentraster] );
@@ -59,7 +56,6 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   stats = new StatsGraph(StatsMode.MS, device.container, () => {
     currentraster = 1 - currentraster;
     device.use(rasterisers[currentraster]);
-    // let title = currentraster ? "WebAssembly / C:" : "JavaScript:";
     stats.setview(currentraster);
   });
 
@@ -72,10 +68,10 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   {
     stats.begin();
 
-    box.setrotation( [0, (ang-=2) % 360, 0] );
+    mesh.setrotation( [0, (ang-=2) % 360, 0] );
 
     device.clear();
-    device.render( box, mtransform );
+    device.render( mesh, mtransform );
     device.flip();
 
     stats.end();

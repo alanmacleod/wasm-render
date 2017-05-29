@@ -13,9 +13,8 @@ interface IRasteriser
   init( width: number, height: number ): void;
   tri(points:number[][], uvs:number[][], light:number, tex: Texture, wireframe?:boolean): void;
 
-  // Setup and tear-down methods called by Device every frame
+  // Setup method for every frame
   begin(): void;
-  end(): void;
 }
 
 export default IRasteriser;

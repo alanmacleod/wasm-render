@@ -425,7 +425,6 @@ class Device {
             throw new ReferenceError("`rasteriser.buffer: Uint8ClampedArray` is required!");
         this.imageData.data.set(this.rasteriser.buffer);
         this.context.putImageData(this.imageData, 0, 0);
-        this.rasteriser.end();
     }
     // Renders a textured Mesh with zBuffer
     render(m, mat) {
@@ -689,12 +688,8 @@ class NativeRasteriser {
         this.ready = true;
     }
     begin() {
-        // this.buffer.fill(0);
-        ////  this.buffer32.fill(ALPHA_MAGIC_NUMBER + 255);
+        this.zbuffer.fill(0); // reset Z-buffer at the end of frame
         this.buffer32.fill(__WEBPACK_IMPORTED_MODULE_1__core_Sym__["b" /* ALPHA_MAGIC_NUMBER */]); // black
-    }
-    end() {
-        this.zbuffer.fill(0);
     }
     // Standard Bres' line routine, I've been copying, pasting and translating
     // this code of mine for about 10 years. It's seen around six languages.
@@ -810,6 +805,10 @@ class NativeRasteriser {
             true // Clipping?
             );
         }
+    }
+    testfunction2() {
+        let a = 1;
+        return;
     }
     // Uses a barycentric coord technique of rasterisation I found here
     // in this excellent course/repo: https://github.com/ssloy/tinyrenderer
@@ -954,14 +953,8 @@ class WasmRasteriser {
         this.ready = false;
     }
     begin() {
-        // Start a new task list
-        // this.framebuffer.buffer.fill(0);
-        this.framebuffer.buffer32.fill(0xff000000);
-    }
-    end() {
-        // clear z-buffer
-        // console.log("WASM tasks: "+ this.taskno);
         this.zbuffer.fill(0);
+        this.framebuffer.buffer32.fill(0xff000000);
     }
     init(w, h) {
         if (this.ready)
@@ -1348,10 +1341,9 @@ let rasterisers = [];
 let currentraster = RASTERISER_NATIVE;
 // 3D scene setup
 // Create and position simple test object
-let box = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]({ wireframe: false });
-box.load("./obj/african_head.json");
-// box.boxgeometry( 1, 1, 1 );
-box.set([0, 0, 6], [0, 0, 0]);
+let mesh = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]({ wireframe: false });
+mesh.load("./obj/african_head.json");
+mesh.set([0, 0, 5.5], [0, 0, 0]);
 // Eye -> Screen matrices
 let mprojection = __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].create(); // Camera -> Screen
 let mcamera = __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].create(); // Duh
@@ -1367,14 +1359,13 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     rasterisers[1] = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);
     // Load the texture here because the WASM instance is needed for SharedMem
     let t = new __WEBPACK_IMPORTED_MODULE_2__memory_Texture__["a" /* default */](wasm, "./img/african_head_diffuse_180.jpg");
-    box.textures.push(t);
+    mesh.textures.push(t);
     // The 'device' calls the rasterisers and handles the Canvas
     let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, rasterisers[currentraster]);
     device.create();
     stats = new __WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__["b" /* StatsMode */].MS, device.container, () => {
         currentraster = 1 - currentraster;
         device.use(rasterisers[currentraster]);
-        // let title = currentraster ? "WebAssembly / C:" : "JavaScript:";
         stats.setview(currentraster);
     });
     requestAnimationFrame(render);
@@ -1382,9 +1373,9 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     // Main render loop
     function render() {
         stats.begin();
-        box.setrotation([0, (ang -= 2) % 360, 0]);
+        mesh.setrotation([0, (ang -= 2) % 360, 0]);
         device.clear();
-        device.render(box, mtransform);
+        device.render(mesh, mtransform);
         device.flip();
         stats.end();
         // if (ang < 10)

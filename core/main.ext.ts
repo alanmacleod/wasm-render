@@ -20,6 +20,7 @@ export interface WasmInstance
        p2x:number, p2y:number, p2z:number, u2:number, v2:number,
        texels:number, texwid:number, light:number ): void;
 
+ _testfunction(): void;
   // heap
   buffer: ArrayBuffer;
 }

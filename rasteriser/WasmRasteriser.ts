@@ -32,17 +32,12 @@ export default class WasmRasteriser implements IRasteriser
 
   public begin()
   {
-    // Start a new task list
-    // this.framebuffer.buffer.fill(0);
+
+    this.zbuffer.fill(0);
     this.framebuffer.buffer32.fill(0xff000000);
+
   }
 
-  public end()
-  {
-    // clear z-buffer
-    // console.log("WASM tasks: "+ this.taskno);
-    this.zbuffer.fill(0);
-  }
 
   public init(w: number, h: number)
   {
