@@ -334,7 +334,7 @@ class SharedMemory {
         this._heap = this.wasm._malloc(sizebytes);
         this._buffer = new Uint8ClampedArray(this.wasm.buffer, this._heap, this.size);
         // Note: us
-        this._buffer32 = new Int32Array(this.wasm.buffer, this._heap, this.size);
+        this._buffer32 = new Uint32Array(this.wasm.buffer, this._heap, this.size);
         return this.size;
     }
     // Blit `from` -> `.buffer`
@@ -353,7 +353,7 @@ class SharedMemory {
     get buffer() {
         return this._buffer;
     }
-    get bufferi32() {
+    get buffer32() {
         return this._buffer32;
     }
     // Return the heap pointer in WASM space (C funcs will need this)
@@ -432,6 +432,10 @@ class Device {
         // Directional light
         let light = [0, 0, -1];
         let saturation = 1.35;
+        let ambient = 0.3;
+        let renderbuffer = [];
+        // Blank the v norms (we're going to recalc them all in a sec)
+        m.vertexnormals = [];
         // Initialise these outside the loop for normal/lighting calcs
         let v1 = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create();
         let v2 = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create();
@@ -451,12 +455,14 @@ class Device {
         let vertex;
         let transform = __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].create();
         __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].concat([m.matrix, mat], transform);
+        let vnormindicies = [0, 0, 0];
         // For each face (triangle) of the mesh model
         for (let fi = 0; fi < m.faces.length; fi++) {
             let face = m.faces[fi];
             // Transform each face's vertex into view space
             for (let v = 0; v < 3; v++) {
                 vertex = m.vertices[face[v]];
+                vnormindicies[v] = face[v];
                 __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].transform(vertex, transform, triworld[v]);
                 triscreen[v][0] = triworld[v][0] * this.width + this.hwidth;
                 triscreen[v][1] = -triworld[v][1] * this.height + this.hheight;
@@ -467,13 +473,26 @@ class Device {
             __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].sub(triworld[1], triworld[0], v2);
             __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].cross(v1, v2, fnormal);
             __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].norm(fnormal, fnormal);
+            // // Now we've calculated the face normal, accumulate them in face's v norms
+            //  // Cancelled doing this, too much effort and refactoring needed for
+            //  // graphical fluff irrelevant to the objective
+            // for (let vn=0; vn<3; vn++)
+            // {
+            //   let vi = vnormindicies[vn];
+            //   if (!m.vertexnormals[vi])
+            //     m.vertexnormals[vi] = [0,0,0,0]; // 4th index == normalized? boolean
+            //
+            //   Vector3.add(
+            //     m.vertexnormals[vi],
+            //     fnormal,
+            //     m.vertexnormals[vi]
+            //   );
+            // }
+            //m.vertexnormals()
             let power = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].dot(fnormal, light);
-            // Instead of rasterising immediately, accumulate face normals and then
-            // Rasterise if visible etc
             if (power > 0 && m.textures.length > 0) {
-                //console.log("uvtex", m.uvtextures);
                 // Call the rasteriser! JS || WASM
-                this.rasteriser.tri(triscreen, m.uvs[fi], power * saturation, m.textures[m.uvtextures[fi]], m.wireframe);
+                this.rasteriser.tri(triscreen, m.uvs[fi], ambient + power * saturation, m.textures[m.uvtextures[fi]], m.wireframe);
             }
         }
     }
@@ -665,13 +684,14 @@ class NativeRasteriser {
         this.hheight = (h / 2) >> 0;
         this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_1__core_Sym__["a" /* BYTES_PER_PIXEL */];
         this.buffer = new Uint8ClampedArray(this.pagesize);
-        this.buffer32 = new Int32Array(this.buffer);
+        this.buffer32 = new Uint32Array(this.buffer.buffer);
         this.zbuffer = new Float32Array(w * h);
         this.ready = true;
     }
     begin() {
-        this.buffer.fill(0);
-        //  this.buffer32.fill(ALPHA_MAGIC_NUMBER + 255);
+        // this.buffer.fill(0);
+        ////  this.buffer32.fill(ALPHA_MAGIC_NUMBER + 255);
+        this.buffer32.fill(__WEBPACK_IMPORTED_MODULE_1__core_Sym__["b" /* ALPHA_MAGIC_NUMBER */]); // black
     }
     end() {
         this.zbuffer.fill(0);
@@ -795,6 +815,7 @@ class NativeRasteriser {
     // in this excellent course/repo: https://github.com/ssloy/tinyrenderer
     tri(points, uvs, light, tex, wireframe) {
         // Texture hasn't loaded yet, draw an outline
+        //!tex.ready ||
         if (!tex.ready || wireframe) {
             this.wireframe(points);
             return;
@@ -934,7 +955,8 @@ class WasmRasteriser {
     }
     begin() {
         // Start a new task list
-        this.framebuffer.buffer.fill(0);
+        // this.framebuffer.buffer.fill(0);
+        this.framebuffer.buffer32.fill(0xff000000);
     }
     end() {
         // clear z-buffer
@@ -950,6 +972,7 @@ class WasmRasteriser {
         // Alocate some shared memory
         this.framebuffer = new __WEBPACK_IMPORTED_MODULE_0__memory_SharedMemory__["a" /* default */](this.wasm, this.pagesize);
         this._zbuffer = this.wasm._malloc(w * h * 4);
+        // Reference to the above so we can clear it here
         this.zbuffer = new Uint8Array(this.wasm.buffer, this._zbuffer, w * h * 4);
         // Tell the WASM exports where to find the heap data and also pass dims
         this.wasm._init(this.framebuffer.pointer, this._zbuffer, w, h);

@@ -98,6 +98,12 @@ export default class Device
     // Directional light
     let light = [0, 0, -1];
     let saturation = 1.35;
+    let ambient = 0.3;
+
+    let renderbuffer = [];
+
+    // Blank the v norms (we're going to recalc them all in a sec)
+    m.vertexnormals = [];
 
     // Initialise these outside the loop for normal/lighting calcs
     let v1 = Vector3.create();
@@ -123,16 +129,18 @@ export default class Device
 
     Matrix.concat([m.matrix, mat], transform);
 
+    let vnormindicies = [0,0,0];
+
     // For each face (triangle) of the mesh model
     for (let fi=0; fi<m.faces.length; fi++)
     {
-
       let face = m.faces[fi];
 
       // Transform each face's vertex into view space
       for (let v=0; v<3; v++)
       {
         vertex = m.vertices[face[v]];
+        vnormindicies[v] = face[v];
 
         Matrix.transform(vertex, transform, triworld[v]);
 
@@ -147,24 +155,38 @@ export default class Device
       Vector3.cross(v1, v2, fnormal);
       Vector3.norm(fnormal, fnormal);
 
-      let power = Vector3.dot(fnormal, light);
+      // // Now we've calculated the face normal, accumulate them in face's v norms
+      //  // Cancelled doing this, too much effort and refactoring needed for
+      //  // graphical fluff irrelevant to the objective
+      // for (let vn=0; vn<3; vn++)
+      // {
+      //   let vi = vnormindicies[vn];
+      //   if (!m.vertexnormals[vi])
+      //     m.vertexnormals[vi] = [0,0,0,0]; // 4th index == normalized? boolean
+      //
+      //   Vector3.add(
+      //     m.vertexnormals[vi],
+      //     fnormal,
+      //     m.vertexnormals[vi]
+      //   );
+      // }
 
-      // Instead of rasterising immediately, accumulate face normals and then
-      // Rasterise if visible etc
+      //m.vertexnormals()
+
+      let power = Vector3.dot(fnormal, light);
 
       if (power > 0 && m.textures.length > 0)
       {
-        //console.log("uvtex", m.uvtextures);
         // Call the rasteriser! JS || WASM
-
         this.rasteriser.tri(
-          triscreen, m.uvs[fi], power * saturation,
+          triscreen, m.uvs[fi], ambient + power * saturation,
           m.textures[m.uvtextures[fi]], m.wireframe
         );
+
       }
 
-
     }
+
   }
 
 }

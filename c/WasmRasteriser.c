@@ -110,6 +110,7 @@ void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
 // Uses a barycentric coord technique of rasterisation I found here
 // in this excellent course/repo: https://github.com/ssloy/tinyrenderer
 
+// Shaded, perspective-correct, textured triangle
 void tri( int p0x, int p0y, float p0z, float u0, float v0,
           int p1x, int p1y, float p1z, float u1, float v1,
           int p2x, int p2y, float p2z, float u2, float v2,
@@ -172,7 +173,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   int bc1;
   int bc2 = va0 * vb1 - va1 * vb0;
 
-  if (Math_abs(bc2) < 1)
+  if (Math_abs(bc2) < 1) // TODO: move this test before the inv_p0z calcs
     return;
 
   float oiz = 1 / (float)bc2;
@@ -201,6 +202,14 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
                 inv_p1z * o1 +
                 inv_p2z * o2;
 
+      // Buffer offset on the screen and z-buffer
+      bo = y * buffer_width + x;
+
+      // Z-buffer test rejection, updating
+      if (heap_zbuffer_ptr[bo] > inv_Pz) continue;
+      heap_zbuffer_ptr[bo] = inv_Pz;
+
+      // Definitely going to draw something now, so finish the remaining calcs
       inv_Pu =  inv_p0u * o0 +
                 inv_p1u * o1 +
                 inv_p2u * o2;
@@ -209,15 +218,10 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
                 inv_p1v * o1 +
                 inv_p2v * o2;
 
-      bo = y * buffer_width + x;
+      u = ( (inv_Pu / inv_Pz) * texmaxu );
+      v = ( (inv_Pv / inv_Pz) * texmaxv );
 
-      if (heap_zbuffer_ptr[bo] > inv_Pz) continue;
-
-      heap_zbuffer_ptr[bo] = inv_Pz;
-
-      u = ((inv_Pu / inv_Pz) * texmaxu);
-      v = ((inv_Pv / inv_Pz) * texmaxv);
-
+      // Texture offset
       to = ((int)v * texwid << BIT_SHIFT_PER_PIXEL) + ((int)u << BIT_SHIFT_PER_PIXEL);
 
       r = Math_min( 255, (int)(((float)texels[ to + 0 ]) * light) );
@@ -225,7 +229,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
       b = Math_min( 255, (int)(((float)texels[ to + 2 ]) * light) );
 
       // Magic number = Alpha = (255 << 24)
-      heap_ptr[ bo ] = 4278190080 + (b << 16) + (g << 8) + r;
+      heap_ptr[ bo ] = 4278190080 + (b << 16) + (g << 8) + r; // bytepack colour expression
     }
   }
 

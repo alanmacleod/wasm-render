@@ -33,7 +33,7 @@ export default class NativeRasteriser implements IRasteriser
   // TODO: Perhaps use Uint32 bytepack view for cleaner/faster/easier writes?
   // Real TypedArray to emulate wasm heap
   public buffer: Uint8ClampedArray;
-  private buffer32: Int32Array;
+  private buffer32: Uint32Array;
   public ready: boolean;
 
   constructor()
@@ -48,16 +48,16 @@ export default class NativeRasteriser implements IRasteriser
     this.height = h; this.hheight = (h/2)>>0;
     this.pagesize = w * h * BYTES_PER_PIXEL;
     this.buffer = new Uint8ClampedArray( this.pagesize );
-    this.buffer32 = new Int32Array(this.buffer);
-
+    this.buffer32 = new Uint32Array(this.buffer.buffer);
     this.zbuffer = new Float32Array( w * h );
     this.ready = true;
   }
 
   public begin()
   {
-   this.buffer.fill(0);
-  //  this.buffer32.fill(ALPHA_MAGIC_NUMBER + 255);
+  // this.buffer.fill(0);
+  ////  this.buffer32.fill(ALPHA_MAGIC_NUMBER + 255);
+  this.buffer32.fill(ALPHA_MAGIC_NUMBER); // black
   }
 
   public end()
@@ -203,7 +203,8 @@ export default class NativeRasteriser implements IRasteriser
   public tri(points:number[][], uvs:number[][], light:number, tex: Texture, wireframe?:boolean): void
   {
     // Texture hasn't loaded yet, draw an outline
-    if (!tex.ready || wireframe)
+    //!tex.ready ||
+    if ( !tex.ready || wireframe)
     {
       this.wireframe(points);
       return;
@@ -323,7 +324,7 @@ export default class NativeRasteriser implements IRasteriser
         inv_Pv =  inv_p0v * o[0] +    // v/z
                   inv_p1v * o[1] +
                   inv_p2v * o[2];
-        
+
 
         // Divide u/z & v/z by 1/z to get perspective correct UV coords
         u = ((inv_Pu / inv_Pz) * texmaxu)>>0;

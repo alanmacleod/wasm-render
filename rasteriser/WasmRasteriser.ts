@@ -33,7 +33,8 @@ export default class WasmRasteriser implements IRasteriser
   public begin()
   {
     // Start a new task list
-    this.framebuffer.buffer.fill(0);
+    // this.framebuffer.buffer.fill(0);
+    this.framebuffer.buffer32.fill(0xff000000);
   }
 
   public end()
@@ -53,6 +54,8 @@ export default class WasmRasteriser implements IRasteriser
     // Alocate some shared memory
     this.framebuffer = new SharedMemory( this.wasm, this.pagesize )
     this._zbuffer = this.wasm._malloc( w * h * 4);
+
+    // Reference to the above so we can clear it here
     this.zbuffer = new Uint8Array(this.wasm.buffer, this._zbuffer, w * h * 4);
 
     // Tell the WASM exports where to find the heap data and also pass dims
