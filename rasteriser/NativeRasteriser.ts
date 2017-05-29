@@ -247,22 +247,6 @@ export default class NativeRasteriser implements IRasteriser
     let u=0, v=0;
     let r=0, g=0, b=0;
 
-    let inv_p0z = 1 / points[0][2];
-    let inv_p1z = 1 / points[1][2];
-    let inv_p2z = 1 / points[2][2];
-
-    let inv_p0u = uvs[0][0] * inv_p0z;
-    let inv_p1u = uvs[1][0] * inv_p1z;
-    let inv_p2u = uvs[2][0] * inv_p2z;
-
-    let inv_p0v = uvs[0][1] * inv_p0z;
-    let inv_p1v = uvs[1][1] * inv_p1z;
-    let inv_p2v = uvs[2][1] * inv_p2z;
-
-    let inv_Pz = 0;
-    let inv_Pu = 0;
-    let inv_Pv = 0;
-
     // Barycentre data we can precalc and cache outside inner loop
     let va0 = points[2][0] - points[0][0];
     let va1 = points[1][0] - points[0][0];
@@ -278,6 +262,22 @@ export default class NativeRasteriser implements IRasteriser
 
     if (Math.abs(bc2) < 1)
       return;
+
+    let inv_p0z = 1 / points[0][2];
+    let inv_p1z = 1 / points[1][2];
+    let inv_p2z = 1 / points[2][2];
+
+    let inv_p0u = uvs[0][0] * inv_p0z;
+    let inv_p1u = uvs[1][0] * inv_p1z;
+    let inv_p2u = uvs[2][0] * inv_p2z;
+
+    let inv_p0v = uvs[0][1] * inv_p0z;
+    let inv_p1v = uvs[1][1] * inv_p1z;
+    let inv_p2v = uvs[2][1] * inv_p2z;
+
+    let inv_Pz = 0;
+    let inv_Pu = 0;
+    let inv_Pv = 0;
 
     let iz = 1 / bc2;
 
