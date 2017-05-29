@@ -308,12 +308,6 @@ export default class NativeRasteriser implements IRasteriser
         inv_Pz =  inv_p0z * o[0] +    // 1/z
                   inv_p1z * o[1] +
                   inv_p2z * o[2];
-        inv_Pu =  inv_p0u * o[0] +    // u/z
-                  inv_p1u * o[1] +
-                  inv_p2u * o[2];
-        inv_Pv =  inv_p0v * o[0] +    // v/z
-                  inv_p1v * o[1] +
-                  inv_p2v * o[2];
 
         let zo = P[1] * this.width + P[0];
 
@@ -321,6 +315,15 @@ export default class NativeRasteriser implements IRasteriser
         if (this.zbuffer[zo] > inv_Pz) continue;
 
         this.zbuffer[zo] = inv_Pz;
+
+
+        inv_Pu =  inv_p0u * o[0] +    // u/z
+                  inv_p1u * o[1] +
+                  inv_p2u * o[2];
+        inv_Pv =  inv_p0v * o[0] +    // v/z
+                  inv_p1v * o[1] +
+                  inv_p2v * o[2];
+        
 
         // Divide u/z & v/z by 1/z to get perspective correct UV coords
         u = ((inv_Pu / inv_Pz) * texmaxu)>>0;

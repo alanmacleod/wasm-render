@@ -28,7 +28,7 @@
           #include <emscripten/emscripten.h> */
 
 /* Function declarations, just to see at a glance what's in here */
-void init( unsigned int *, unsigned int, unsigned int );
+void init( unsigned int *, float *,unsigned int, unsigned int );
 void tri( int, int, float, float,float, int, int,float, float, float,
                 int, int,float,float, float, unsigned char*, unsigned int, float );
 void fill( unsigned int );
@@ -40,15 +40,18 @@ void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
 bool initialised = false;
 
 unsigned int *heap_ptr = NULL;
+float *heap_zbuffer_ptr = NULL; // 32-bit float
 
 unsigned int buffer_width       = 0;
 unsigned int buffer_height      = 0;
 unsigned int buffer_num_pixels  = 0;
 unsigned int buffer_num_bytes   = 0;
 
-void init(unsigned int *buffer, unsigned int width, unsigned int height)
+
+void init(unsigned int *buffer, float *zbuffer, unsigned int width, unsigned int height)
 {
   heap_ptr = buffer;
+  heap_zbuffer_ptr = zbuffer;
 
   buffer_width = width;
   buffer_height = height;
@@ -205,6 +208,14 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
       inv_Pv =  inv_p0v * o0 +
                 inv_p1v * o1 +
                 inv_p2v * o2;
+
+      // let zo = P[1] * this.width + P[0];
+      //
+      // // Use 1/z depth test
+      // if (this.zbuffer[zo] > inv_Pz) continue;
+      //
+      // this.zbuffer[zo] = inv_Pz;
+
 
       u = ((inv_Pu / inv_Pz) * texmaxu);
       v = ((inv_Pv / inv_Pz) * texmaxv);

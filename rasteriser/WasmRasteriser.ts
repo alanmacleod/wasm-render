@@ -19,6 +19,8 @@ export default class WasmRasteriser implements IRasteriser
 
   // and rasterises into this:
   private framebuffer:SharedMemory;
+  private _zbuffer: number;
+  private zbuffer: Uint8Array;
 
   ready: boolean;
 
@@ -38,6 +40,7 @@ export default class WasmRasteriser implements IRasteriser
   {
     // clear z-buffer
     // console.log("WASM tasks: "+ this.taskno);
+    this.zbuffer.fill(0);
   }
 
   public init(w: number, h: number)
@@ -49,9 +52,11 @@ export default class WasmRasteriser implements IRasteriser
 
     // Alocate some shared memory
     this.framebuffer = new SharedMemory( this.wasm, this.pagesize )
+    this._zbuffer = this.wasm._malloc( w * h * 4);
+    this.zbuffer = new Uint8Array(this.wasm.buffer, this._zbuffer, w * h * 4);
 
     // Tell the WASM exports where to find the heap data and also pass dims
-    this.wasm._init( this.framebuffer.pointer, w, h );
+    this.wasm._init( this.framebuffer.pointer, this._zbuffer, w, h );
 
     this.ready = true;
   }

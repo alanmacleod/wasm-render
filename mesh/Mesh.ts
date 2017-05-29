@@ -88,6 +88,8 @@ export default class Mesh
         for (let f=0; f<json.faces.length; f++)
           this.uvtextures.push(0);
 
+        console.info("Model loaded: "+ this.faces.length +" polygons");
+
       });
 
   }

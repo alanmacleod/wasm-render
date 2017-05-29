@@ -580,6 +580,7 @@ class Mesh {
             this.uvtextures = [];
             for (let f = 0; f < json.faces.length; f++)
                 this.uvtextures.push(0);
+            console.info("Model loaded: " + this.faces.length + " polygons");
         });
     }
     boxgeometry(width, height, depth) {
@@ -880,17 +881,17 @@ class NativeRasteriser {
                 inv_Pz = inv_p0z * o[0] +
                     inv_p1z * o[1] +
                     inv_p2z * o[2];
+                let zo = P[1] * this.width + P[0];
+                // Use 1/z depth test
+                if (this.zbuffer[zo] > inv_Pz)
+                    continue;
+                this.zbuffer[zo] = inv_Pz;
                 inv_Pu = inv_p0u * o[0] +
                     inv_p1u * o[1] +
                     inv_p2u * o[2];
                 inv_Pv = inv_p0v * o[0] +
                     inv_p1v * o[1] +
                     inv_p2v * o[2];
-                let zo = P[1] * this.width + P[0];
-                // Use 1/z depth test
-                if (this.zbuffer[zo] > inv_Pz)
-                    continue;
-                this.zbuffer[zo] = inv_Pz;
                 // Divide u/z & v/z by 1/z to get perspective correct UV coords
                 u = ((inv_Pu / inv_Pz) * texmaxu) >> 0;
                 v = ((inv_Pv / inv_Pz) * texmaxv) >> 0;
@@ -938,6 +939,7 @@ class WasmRasteriser {
     end() {
         // clear z-buffer
         // console.log("WASM tasks: "+ this.taskno);
+        this.zbuffer.fill(0);
     }
     init(w, h) {
         if (this.ready)
@@ -947,8 +949,10 @@ class WasmRasteriser {
         this.pagesize = w * h * __WEBPACK_IMPORTED_MODULE_1__core_Sym__["a" /* BYTES_PER_PIXEL */];
         // Alocate some shared memory
         this.framebuffer = new __WEBPACK_IMPORTED_MODULE_0__memory_SharedMemory__["a" /* default */](this.wasm, this.pagesize);
+        this._zbuffer = this.wasm._malloc(w * h * 4);
+        this.zbuffer = new Uint8Array(this.wasm.buffer, this._zbuffer, w * h * 4);
         // Tell the WASM exports where to find the heap data and also pass dims
-        this.wasm._init(this.framebuffer.pointer, w, h);
+        this.wasm._init(this.framebuffer.pointer, this._zbuffer, w, h);
         this.ready = true;
     }
     get buffer() {
