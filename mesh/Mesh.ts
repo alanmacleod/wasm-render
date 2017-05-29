@@ -65,6 +65,13 @@ export default class Mesh
 
   //public loadobj(url):void {}
 
+  public load(url):void
+  {
+    fetch(url).then((res)=>{
+      console.log(res);
+    });
+  }
+
   public boxgeometry(width:number, height:number, depth:number):void
   {
     // Test object.
