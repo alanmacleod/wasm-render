@@ -201,11 +201,11 @@ export default class NativeRasteriser implements IRasteriser
   // Uses a barycentric coord technique of rasterisation I found here
   // in this excellent course/repo: https://github.com/ssloy/tinyrenderer
 
-  public tri(points:number[][], uvs:number[][], light:number, tex: Texture): void
+  public tri(points:number[][], uvs:number[][], light:number, tex: Texture, wireframe?:boolean): void
   {
     // Texture hasn't loaded yet, draw an outline
 
-    if (!tex.ready)
+    if (!tex.ready || wireframe)
     {
       this.wireframe(points);
       return;
@@ -300,7 +300,7 @@ export default class NativeRasteriser implements IRasteriser
         o[0] = 1.0 - (bc0 + bc1) * iz;
         o[1] = bc1 * iz;
         o[2] = bc0 * iz;
-  
+
         if (o[0] < 0 || o[1] < 0 || o[2] < 0) continue;
 
         // Calc weighted values

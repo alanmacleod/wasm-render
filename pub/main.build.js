@@ -468,10 +468,12 @@ class Device {
             __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].cross(v1, v2, fnormal);
             __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].norm(fnormal, fnormal);
             let power = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].dot(fnormal, light);
+            // Instead of rasterising immediately, accumulate face normals and then
             // Rasterise if visible etc
             if (power > 0 && m.textures.length > 0) {
+                //console.log("uvtex", m.uvtextures);
                 // Call the rasteriser! JS || WASM
-                this.rasteriser.tri(triscreen, m.uvs[fi], power * saturation, m.textures[m.uvtextures[fi]]);
+                this.rasteriser.tri(triscreen, m.uvs[fi], power * saturation, m.textures[m.uvtextures[fi]], m.wireframe);
             }
         }
     }
@@ -541,13 +543,16 @@ class Texture {
 //        Just using a box for now, but can handle arbitrary 3d models easily.
 //
 class Mesh {
-    constructor() {
+    constructor(options) {
         this.matrix = __WEBPACK_IMPORTED_MODULE_0__math_Matrix__["a" /* default */].create();
         this.mrotation = __WEBPACK_IMPORTED_MODULE_0__math_Matrix__["a" /* default */].create();
         this.mtranslation = __WEBPACK_IMPORTED_MODULE_0__math_Matrix__["a" /* default */].create();
         this.position = [0, 0, 0];
         this.rotation = [0, 0, 0];
         this.textures = [];
+        if (options) {
+            this.wireframe = options.wireframe || false;
+        }
     }
     updatematrix() {
         // Y only
@@ -565,6 +570,18 @@ class Mesh {
         this.updatematrix();
     }
     //public loadobj(url):void {}
+    load(url) {
+        fetch(url)
+            .then(res => res.json())
+            .then(json => {
+            this.vertices = json.vertices;
+            this.faces = json.faces;
+            this.uvtextures = [];
+            for (let f = 0; f < json.faces.length; f++)
+                this.uvtextures.push(0);
+            this.uvs = json.uvs;
+        });
+    }
     boxgeometry(width, height, depth) {
         // Test object.
         // I used THREE's CubeGeometry class to create a cube, then
@@ -607,6 +624,7 @@ class Mesh {
             [[0, 1], [0, 0], [1, 1]],
             [[0, 0], [1, 0], [1, 1]]
         ];
+        // For each face, specify
         this.uvtextures = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         for (let v of this.vertices) {
             v[0] *= width;
@@ -774,10 +792,9 @@ class NativeRasteriser {
     }
     // Uses a barycentric coord technique of rasterisation I found here
     // in this excellent course/repo: https://github.com/ssloy/tinyrenderer
-    tri(points, uvs, light, tex) {
+    tri(points, uvs, light, tex, wireframe) {
         // Texture hasn't loaded yet, draw an outline
-        // console.log(tex.ready);
-        if (!tex.ready) {
+        if (!tex.ready || wireframe) {
             this.wireframe(points);
             return;
         }
@@ -827,7 +844,6 @@ class NativeRasteriser {
         let inv_Pz = 0;
         let inv_Pu = 0;
         let inv_Pv = 0;
-        // a = points[0], b = points[1], c = points[2]
         let va0 = points[2][0] - points[0][0];
         let va1 = points[1][0] - points[0][0];
         let va2;
@@ -855,7 +871,6 @@ class NativeRasteriser {
                 o[0] = 1.0 - (bc0 + bc1) * iz;
                 o[1] = bc1 * iz;
                 o[2] = bc0 * iz;
-                // Check [0] first
                 if (o[0] < 0 || o[1] < 0 || o[2] < 0)
                     continue;
                 // Calc weighted values
@@ -1297,7 +1312,8 @@ let rasterisers = [];
 let currentraster = RASTERISER_NATIVE;
 // 3D scene setup
 // Create and position simple test object
-let box = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]();
+let box = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]({ wireframe: false });
+box.load("./obj/african_head.json");
 box.boxgeometry(1, 1, 1);
 box.set([0, 0, 6], [0, 0, 0]);
 // Eye -> Screen matrices
@@ -1305,7 +1321,7 @@ let mprojection = __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].
 let mcamera = __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].create(); // Duh
 let mtransform = __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].create(); // Concatenated transformation
 __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].perspective(45, SCR_WIDTH / SCR_HEIGHT, 0.01, 1.0, mprojection);
-__WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].lookat([0, 0, 10], [0, 0, 0], [0, 1, 0], mcamera);
+__WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].lookat([0, 0, 12.5], [0, 0, 0], [0, 1, 0], mcamera);
 // Concatenate the above matrices for speed
 __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].concat([mcamera, mprojection], mtransform);
 // Load the WASM code over the wire
@@ -1319,7 +1335,6 @@ w.load("./wasm/WasmRasteriser").then((wasm) => {
     // The 'device' calls the rasterisers and handles the Canvas
     let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, rasterisers[currentraster]);
     device.create();
-    // device.switchrasteriser(wraster)
     stats = new __WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__["b" /* StatsMode */].MS, device.container, () => {
         currentraster = 1 - currentraster;
         device.use(rasterisers[currentraster]);

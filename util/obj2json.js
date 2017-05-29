@@ -4,7 +4,7 @@ var fs = require('fs');
 
 
 var file = "../obj/african_head.obj";
-var file_out = "../obj/african_head.json";
+var file_out = "../pub/african_head.json";
 
 parseObj(fs.createReadStream(file), function (err, result) {
     //

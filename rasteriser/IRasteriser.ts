@@ -11,7 +11,7 @@ interface IRasteriser
   ready: boolean;
 
   init( width: number, height: number ): void;
-  tri(points:number[][], uvs:number[][], light:number, tex: Texture): void;
+  tri(points:number[][], uvs:number[][], light:number, tex: Texture, wireframe?:boolean): void;
 
   // Setup and tear-down methods called by Device every frame
   begin(): void;

@@ -151,13 +151,14 @@ export default class Device
 
       // Instead of rasterising immediately, accumulate face normals and then
       // Rasterise if visible etc
-      
+
       if (power > 0 && m.textures.length > 0)
       {
+        //console.log("uvtex", m.uvtextures);
         // Call the rasteriser! JS || WASM
         this.rasteriser.tri(
           triscreen, m.uvs[fi], power * saturation,
-          m.textures[m.uvtextures[fi]]
+          m.textures[m.uvtextures[fi]], m.wireframe
         );
       }
 

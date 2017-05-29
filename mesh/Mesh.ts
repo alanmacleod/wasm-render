@@ -26,7 +26,9 @@ export default class Mesh
   private mrotation:number[][];
   private mtranslation: number[][];
 
-  constructor()
+  public wireframe: boolean;
+
+  constructor(options?:any)
   {
     this.matrix = Matrix.create();
     this.mrotation = Matrix.create();
@@ -35,9 +37,14 @@ export default class Mesh
     this.position = [0,0,0];
     this.rotation = [0,0,0];
 
-
-
     this.textures = [];
+
+    if (options)
+    {
+      this.wireframe = options.wireframe || false;
+    }
+
+
   }
 
 
@@ -67,9 +74,21 @@ export default class Mesh
 
   public load(url):void
   {
-    fetch(url).then((res)=>{
-      console.log(res);
-    });
+    fetch(url)
+      .then( res => res.json() )
+      .then( json => {
+
+        this.vertices = json.vertices;
+        this.faces = json.faces;
+        this.uvtextures = [];
+
+        for (let f=0; f<json.faces.length; f++)
+          this.uvtextures.push(0);
+
+        this.uvs = json.uvs;
+
+      });
+
   }
 
   public boxgeometry(width:number, height:number, depth:number):void
@@ -120,6 +139,7 @@ export default class Mesh
       [[0,0],[1,0],[1,1]]
     ];
 
+    // For each face, specify
     this.uvtextures = [ 0,0,0,0,0,0,0,0,0,0,0,0 ];
 
     for (let v of this.vertices)

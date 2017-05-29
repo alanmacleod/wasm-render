@@ -23,7 +23,8 @@ let currentraster = RASTERISER_NATIVE;
 
 // 3D scene setup
 // Create and position simple test object
-let box = new Mesh();
+let box = new Mesh({wireframe:false});
+box.load("./obj/african_head.json");
 box.boxgeometry( 1, 1, 1 );
 box.set( [0,0,6], [0,0,0] );
 
@@ -33,7 +34,7 @@ let mcamera     = Matrix.create(); // Duh
 let mtransform  = Matrix.create(); // Concatenated transformation
 
 Matrix.perspective( 45, SCR_WIDTH/SCR_HEIGHT, 0.01, 1.0, mprojection );
-Matrix.lookat( [0,0,10], [0,0,0], [0,1,0], mcamera );
+Matrix.lookat( [0,0,12.5], [0,0,0], [0,1,0], mcamera );
 
 // Concatenate the above matrices for speed
 Matrix.concat( [mcamera, mprojection], mtransform );
