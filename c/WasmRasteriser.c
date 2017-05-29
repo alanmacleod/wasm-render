@@ -138,7 +138,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   // float o0=0, o1=0, o2=0;
   int tu, tv;
   float u, v;
-  int to;
+  int to, bo;
 
   int x, y;
 
@@ -209,13 +209,11 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
                 inv_p1v * o1 +
                 inv_p2v * o2;
 
-      // let zo = P[1] * this.width + P[0];
-      //
-      // // Use 1/z depth test
-      // if (this.zbuffer[zo] > inv_Pz) continue;
-      //
-      // this.zbuffer[zo] = inv_Pz;
+      bo = y * buffer_width + x;
 
+      if (heap_zbuffer_ptr[bo] > inv_Pz) continue;
+
+      heap_zbuffer_ptr[bo] = inv_Pz;
 
       u = ((inv_Pu / inv_Pz) * texmaxu);
       v = ((inv_Pv / inv_Pz) * texmaxv);
@@ -227,7 +225,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
       b = Math_min( 255, (int)(((float)texels[ to + 2 ]) * light) );
 
       // Magic number = Alpha = (255 << 24)
-      heap_ptr[ y * buffer_width + x ] = 4278190080 + (b << 16) + (g << 8) + r;
+      heap_ptr[ bo ] = 4278190080 + (b << 16) + (g << 8) + r;
     }
   }
 
