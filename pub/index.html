@@ -6,11 +6,62 @@
   <style type="text/css">
   body {
     background-color: black;
+    font-family: Sans-serif;
   }
+  #output
+  {
+      width: 640px;
+      height: 480px;
+      margin-right: auto;
+      margin-left: auto;
+      position:relative; /* hack for graph overlay */
+      cursor: pointer; /* make it look clickable */
+  }
+
+  #info
+  {
+    color: #999;
+    padding: 30px;
+    cursor: default;
+    pointer-events: none;
+  }
+  h3 { color: #a8a8a8 }
+  b { color: #b8b8b8 }
+
   </style>
 </head>
 <body>
+  <div id="output">
+    <div id="info">
+      <h3>Hi !</h3>
+      <p>
+        This is the result of an exploration of WebAssembly technology, how it performs and how
+        it might integrate into the existing Javascript development process.
+      </p>
+      <p>
+        I thought a proper work-out 💪 test of the performance would be to write a
+        polygon rasterisation routine in both JS and WASM/C, something which is pretty
+        cycle intensive even directly on a CPU. Plus it's nice to look at.
+      </p>
+      <p>
+        The graph is recording the time required to render one frame in milliseconds
+      </p>
+
+      <p>
+        <b>Click the model to switch between pure Javascript and WebAssembly code in realtime whoooo</b>
+      </p>
+
+      <p>
+        <small>Alan MacLeod</small>
+      </p>
+      <p>
+        <small>blog.alanmacleod.eu/wasm-renderer</small>
+      </p>
+
+    </div>
+  </div>
   <script src="./main.build.js"></script>
+
 
   <!-- <textarea id="ta"></textarea>
 

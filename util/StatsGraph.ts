@@ -24,7 +24,7 @@ export default class StatsGraph
     this.stats.begin();
   }
 
-  setview(title:string)
+  setview(title:number)
   {
     this.stats.setview(title);
   }

@@ -50,14 +50,15 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   mesh.textures.push( t );
 
   // The 'device' calls the rasterisers and handles the Canvas
-  let device = new Device( SCR_WIDTH, SCR_HEIGHT, rasterisers[currentraster] );
+  let device = new Device( SCR_WIDTH, SCR_HEIGHT, rasterisers );
   device.create();
 
-  stats = new StatsGraph(StatsMode.MS, device.container, () => {
-    currentraster = 1 - currentraster;
-    device.use(rasterisers[currentraster]);
-    stats.setview(currentraster);
-  });
+
+    // currentraster = 1 - currentraster;
+    //device.use(rasterisers[currentraster]);
+    //device.cyclerasteriser();
+    // stats.setview(currentraster);
+  //});
 
 
   requestAnimationFrame( render );
@@ -66,7 +67,7 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
   // Main render loop
   function render()
   {
-    stats.begin();
+    device.stats.begin();
 
     mesh.setrotation( [0, (ang-=2) % 360, 0] );
 
@@ -74,7 +75,7 @@ w.load("./wasm/WasmRasteriser").then((wasm: WasmInstance) =>
     device.render( mesh, mtransform );
     device.flip();
 
-    stats.end();
+    device.stats.end();
     // if (ang < 10)
     requestAnimationFrame( render );
   }

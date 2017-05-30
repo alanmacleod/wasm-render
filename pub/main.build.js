@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "/";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 12);
+/******/ 	return __webpack_require__(__webpack_require__.s = 11);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -373,21 +373,25 @@ class SharedMemory {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__math_Vector3__ = __webpack_require__(2);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__math_Matrix__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Sym__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__ = __webpack_require__(13);
 // Device.ts
 // Just abstracts the canvas crap
 // Accepts a Uint8 buffer for rendering
 
 
 
+
 // rename VideoDevice() as will extend to include texture "memory" etc
 class Device {
-    constructor(width, height, rasteriser) {
+    constructor(width, height, rasterisers) {
         this.width = width;
         this.height = height;
         this.hwidth = (width / 2) >> 0;
         this.hheight = (height / 2) >> 0;
-        this.rasteriser = rasteriser;
+        this.currentraster = 0;
         this.container = null;
+        this.rasteroptions = rasterisers;
+        this.rasteriser = this.rasteroptions[this.currentraster];
         this.rasteriser.init(width, height);
         this.bytes = width * height * __WEBPACK_IMPORTED_MODULE_2__Sym__["a" /* BYTES_PER_PIXEL */];
     }
@@ -395,13 +399,23 @@ class Device {
         let e = !(element) ? document.body :
             document.getElementById(element);
         let c = document.createElement('canvas');
-        this.container = document.createElement('div');
+        //this.container = document.createElement('div');
+        this.container = document.getElementById('output');
+        let inf = document.getElementById('info');
         // this.container.style.backgroundColor = "#f0f";
         this.container.style.width = this.width + "px";
         this.container.style.height = this.height + "px";
-        this.container.style.position = "relative";
-        // this.container.style.border = "1px solid #d0d0d0";
-        this.container.appendChild(c);
+        // this.container.style.marginRight = "auto";
+        // this.container.style.marginLeft = "auto";
+        // this.container.style.position = "relative";
+        // this.container.style.cursor = "pointer";
+        this.stats = new __WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__["b" /* StatsMode */].MS, this.container);
+        this.container.onclick = () => {
+            this.cyclerasteriser();
+            this.stats.setview(this.currentraster);
+        };
+        //this.container.appendChild(c);
+        this.container.insertBefore(c, inf);
         c.width = this.width;
         c.height = this.height;
         this.canvas = c;
@@ -411,7 +425,16 @@ class Device {
         e.appendChild(this.container);
         this.clear();
     }
+    cyclerasteriser() {
+        this.currentraster = 1 - this.currentraster;
+        this.rasteriser = this.rasteroptions[this.currentraster];
+        if (!this.rasteriser.ready)
+            this.rasteriser.init(this.width, this.height);
+    }
     use(rasteriser) {
+        // currentraster = 1 - currentraster;
+        //device.use(rasterisers[currentraster]);
+        // stats.setview(currentraster);
         if (!rasteriser.ready)
             rasteriser.init(this.width, this.height);
         this.rasteriser = rasteriser;
@@ -656,7 +679,7 @@ class Mesh {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Clip__ = __webpack_require__(13);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Clip__ = __webpack_require__(12);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__core_Sym__ = __webpack_require__(0);
 // NativeRasteriser.ts
 //       Alan MacLeod 2017, alanamacleod.eu, github.com/alanmacleod
@@ -1002,48 +1025,6 @@ class WasmRasteriser {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return StatsMode; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__ = __webpack_require__(11);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__);
-
-class StatsGraph {
-    constructor(mode = 1, appendElement, clickHandler) {
-        this.stats = __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__(clickHandler);
-        let e = appendElement || document.body;
-        e.appendChild(this.stats.dom);
-        this.stats.showPanel(mode);
-        this.stats.dom.style.position = "absolute";
-        this.stats.dom.style.top = '';
-        this.stats.dom.style.bottom = "0";
-        // this.stats.dom.style.right = "5px";
-        this.stats.dom.style.left = "30px";
-    }
-    begin() {
-        this.stats.begin();
-    }
-    setview(title) {
-        this.stats.setview(title);
-    }
-    end() {
-        this.stats.end();
-    }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = StatsGraph;
-
-var StatsMode;
-(function (StatsMode) {
-    StatsMode[StatsMode["FPS"] = 0] = "FPS";
-    StatsMode[StatsMode["MS"] = 1] = "MS";
-    StatsMode[StatsMode["MB"] = 2] = "MB";
-    StatsMode[StatsMode["CUSTOM"] = 3] = "CUSTOM";
-})(StatsMode || (StatsMode = {}));
-
-
-/***/ }),
-/* 10 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
 // Errrr not sure how to properly handle this global member mess in TS?
 window.Module = {};
 class WasmLoader {
@@ -1080,7 +1061,7 @@ class WasmLoader {
 
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 (function (global, factory) {
@@ -1115,13 +1096,16 @@ class WasmLoader {
 
 		var container = document.createElement('div');
 		container.style.cssText = 'position:fixed;top:0;left:0;cursor:pointer;opacity:0.7;z-index:10000';
-		container.addEventListener('click', function (event) {
+		// container.addEventListener( 'click', function ( event ) {
+		//
+		// 	//event.preventDefault();
+		// 	// showPanel( ++ mode % container.children.length );
+		//
+		//   // if (clickHandler)
+		//   //   clickHandler();
+		//
+		// }, false );
 
-			event.preventDefault();
-			// showPanel( ++ mode % container.children.length );
-
-			if (clickHandler) clickHandler();
-		}, false);
 
 		//
 
@@ -1172,7 +1156,7 @@ class WasmLoader {
 
 			setview: function (rno) {
 				//console.log(msPanel);
-				msPanel.textlabel = rno ? "WebAssembly / C:" : "JavaScript:";
+				msPanel.textlabel = rno ? "WebAssembly / C:" : "Javascript:";
 				msPanel.fillCol = rno ? "#E855E8" : "#00BB00";
 				msPanel.bgCol = rno ? "#E855E8" : "#00BB00";
 			},
@@ -1274,7 +1258,7 @@ class WasmLoader {
 
 			dom: canvas,
 
-			textlabel: "JavaScript:",
+			textlabel: "Javascript:",
 
 			fillCol: "#00BB00",
 
@@ -1316,20 +1300,18 @@ class WasmLoader {
 });
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__ = __webpack_require__(6);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__util_WasmLoader__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__util_WasmLoader__ = __webpack_require__(9);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__memory_Texture__ = __webpack_require__(5);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__ = __webpack_require__(9);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__ = __webpack_require__(7);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__ = __webpack_require__(8);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__Device__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__math_Matrix__ = __webpack_require__(1);
-
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__rasteriser_NativeRasteriser__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__rasteriser_WasmRasteriser__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__Device__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__math_Matrix__ = __webpack_require__(1);
 
 
 
@@ -1350,39 +1332,39 @@ let mesh = new __WEBPACK_IMPORTED_MODULE_0__mesh_Mesh__["a" /* default */]({ wir
 mesh.load("./obj/african_head.json");
 mesh.set([0, 0, 5.5], [0, 0, 0]);
 // Eye -> Screen matrices
-let mprojection = __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].create(); // Camera -> Screen
-let mcamera = __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].create(); // Duh
-let mtransform = __WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].create(); // Concatenated transformation
-__WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].perspective(45, SCR_WIDTH / SCR_HEIGHT, 0.01, 1.0, mprojection);
-__WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].lookat([0, 0, 12.5], [0, 0, 0], [0, 1, 0], mcamera);
+let mprojection = __WEBPACK_IMPORTED_MODULE_6__math_Matrix__["a" /* default */].create(); // Camera -> Screen
+let mcamera = __WEBPACK_IMPORTED_MODULE_6__math_Matrix__["a" /* default */].create(); // Duh
+let mtransform = __WEBPACK_IMPORTED_MODULE_6__math_Matrix__["a" /* default */].create(); // Concatenated transformation
+__WEBPACK_IMPORTED_MODULE_6__math_Matrix__["a" /* default */].perspective(45, SCR_WIDTH / SCR_HEIGHT, 0.01, 1.0, mprojection);
+__WEBPACK_IMPORTED_MODULE_6__math_Matrix__["a" /* default */].lookat([0, 0, 12.5], [0, 0, 0], [0, 1, 0], mcamera);
 // Concatenate the above matrices for speed
-__WEBPACK_IMPORTED_MODULE_7__math_Matrix__["a" /* default */].concat([mcamera, mprojection], mtransform);
+__WEBPACK_IMPORTED_MODULE_6__math_Matrix__["a" /* default */].concat([mcamera, mprojection], mtransform);
 // Load the WASM code over the wire
 w.load("./wasm/WasmRasteriser").then((wasm) => {
     // // Create the two rasterisers
-    rasterisers[0] = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_NativeRasteriser__["a" /* default */]();
-    rasterisers[1] = new __WEBPACK_IMPORTED_MODULE_5__rasteriser_WasmRasteriser__["a" /* default */](wasm);
+    rasterisers[0] = new __WEBPACK_IMPORTED_MODULE_3__rasteriser_NativeRasteriser__["a" /* default */]();
+    rasterisers[1] = new __WEBPACK_IMPORTED_MODULE_4__rasteriser_WasmRasteriser__["a" /* default */](wasm);
     // Load the texture here because the WASM instance is needed for SharedMem
     let t = new __WEBPACK_IMPORTED_MODULE_2__memory_Texture__["a" /* default */](wasm, "./img/african_head_diffuse_180.jpg");
     mesh.textures.push(t);
     // The 'device' calls the rasterisers and handles the Canvas
-    let device = new __WEBPACK_IMPORTED_MODULE_6__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, rasterisers[currentraster]);
+    let device = new __WEBPACK_IMPORTED_MODULE_5__Device__["a" /* default */](SCR_WIDTH, SCR_HEIGHT, rasterisers);
     device.create();
-    stats = new __WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__["a" /* default */](__WEBPACK_IMPORTED_MODULE_3__util_StatsGraph__["b" /* StatsMode */].MS, device.container, () => {
-        currentraster = 1 - currentraster;
-        device.use(rasterisers[currentraster]);
-        stats.setview(currentraster);
-    });
+    // currentraster = 1 - currentraster;
+    //device.use(rasterisers[currentraster]);
+    //device.cyclerasteriser();
+    // stats.setview(currentraster);
+    //});
     requestAnimationFrame(render);
     var ang = 360;
     // Main render loop
     function render() {
-        stats.begin();
+        device.stats.begin();
         mesh.setrotation([0, (ang -= 2) % 360, 0]);
         device.clear();
         device.render(mesh, mtransform);
         device.flip();
-        stats.end();
+        device.stats.end();
         // if (ang < 10)
         requestAnimationFrame(render);
     }
@@ -1451,7 +1433,7 @@ function runbenchmarks(wasm)
 
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1512,6 +1494,48 @@ class Clip {
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = Clip;
 
+
+
+/***/ }),
+/* 13 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return StatsMode; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__);
+
+class StatsGraph {
+    constructor(mode = 1, appendElement, clickHandler) {
+        this.stats = __WEBPACK_IMPORTED_MODULE_0__lib_stats_mod_js__(clickHandler);
+        let e = appendElement || document.body;
+        e.appendChild(this.stats.dom);
+        this.stats.showPanel(mode);
+        this.stats.dom.style.position = "absolute";
+        this.stats.dom.style.top = '';
+        this.stats.dom.style.bottom = "0";
+        // this.stats.dom.style.right = "5px";
+        this.stats.dom.style.left = "30px";
+    }
+    begin() {
+        this.stats.begin();
+    }
+    setview(title) {
+        this.stats.setview(title);
+    }
+    end() {
+        this.stats.end();
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = StatsGraph;
+
+var StatsMode;
+(function (StatsMode) {
+    StatsMode[StatsMode["FPS"] = 0] = "FPS";
+    StatsMode[StatsMode["MS"] = 1] = "MS";
+    StatsMode[StatsMode["MB"] = 2] = "MB";
+    StatsMode[StatsMode["CUSTOM"] = 3] = "CUSTOM";
+})(StatsMode || (StatsMode = {}));
 
 
 /***/ })

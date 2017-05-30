@@ -8,6 +8,8 @@ import Vector3           from '../math/Vector3';
 import Matrix            from '../math/Matrix';
 import IRasteriser       from '../rasteriser/IRasteriser';
 import {BYTES_PER_PIXEL} from './Sym';
+import StatsGraph,
+        {StatsMode}      from '../util/StatsGraph';
 
 // rename VideoDevice() as will extend to include texture "memory" etc
 export default class Device
@@ -19,21 +21,31 @@ export default class Device
   private hwidth: number;
   private hheight: number;
   private imageData: ImageData;
-  private rasteriser: IRasteriser;
-  private bytes: number;
-  public container: HTMLElement;
 
-  constructor(width: number, height: number, rasteriser: IRasteriser)
+  private currentraster:number;
+  private rasteroptions:IRasteriser[];
+  private rasteriser: IRasteriser;
+
+  private bytes: number;
+
+  public container: HTMLElement;
+  public stats: StatsGraph;
+
+  constructor(width: number, height: number, rasterisers: IRasteriser[])
   {
     this.width = width;
     this.height = height;
     this.hwidth = (width/2)>>0;
     this.hheight = (height/2)>>0;
-    this.rasteriser = rasteriser;
+    this.currentraster = 0;
     this.container = null;
+    this.rasteroptions = rasterisers;
 
+    this.rasteriser = this.rasteroptions[this.currentraster];
     this.rasteriser.init(width, height);
+
     this.bytes = width * height * BYTES_PER_PIXEL;
+
   }
 
   public create(element?:string): void
@@ -43,15 +55,27 @@ export default class Device
 
     let c:HTMLCanvasElement = document.createElement( 'canvas' );
 
-    this.container = document.createElement('div');
+    //this.container = document.createElement('div');
+    this.container = document.getElementById('output');
+    let inf = document.getElementById('info');
 
     // this.container.style.backgroundColor = "#f0f";
     this.container.style.width = this.width+"px";
     this.container.style.height = this.height+"px";
-    this.container.style.position = "relative";
-    // this.container.style.border = "1px solid #d0d0d0";
+    // this.container.style.marginRight = "auto";
+    // this.container.style.marginLeft = "auto";
+    // this.container.style.position = "relative";
+    // this.container.style.cursor = "pointer";
 
-    this.container.appendChild(c);
+    this.stats = new StatsGraph(StatsMode.MS, this.container);
+
+    this.container.onclick = () => {
+      this.cyclerasteriser();
+      this.stats.setview(this.currentraster);
+    }
+
+    //this.container.appendChild(c);
+    this.container.insertBefore(c, inf);
 
     c.width = this.width;
     c.height = this.height;
@@ -67,8 +91,22 @@ export default class Device
     this.clear();
   }
 
+  public cyclerasteriser(): void
+  {
+    this.currentraster = 1 - this.currentraster;
+    this.rasteriser = this.rasteroptions[this.currentraster];
+
+    if (!this.rasteriser.ready)
+      this.rasteriser.init( this.width, this.height );
+  }
+
   public use(rasteriser:IRasteriser): void
   {
+    // currentraster = 1 - currentraster;
+    //device.use(rasterisers[currentraster]);
+    // stats.setview(currentraster);
+
+
     if (!rasteriser.ready)
       rasteriser.init( this.width, this.height );
 

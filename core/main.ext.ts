@@ -31,6 +31,6 @@ export interface ThreeStats
   showPanel(which: number): void;
   begin():  void;
   end():    void;
-  setview(title:string): void;
+  setview(which:number): void;
   dom:      HTMLElement;
 }
