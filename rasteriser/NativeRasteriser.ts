@@ -186,7 +186,7 @@ export default class NativeRasteriser implements IRasteriser
       this.line(
         a[0], a[1],     // point A
         b[0], b[1],     // point B
-        0, 0, 0,  // Colour
+        0xA0, 0xA0, 0xA0,  // Colour
         true            // Clipping?
       );
     }

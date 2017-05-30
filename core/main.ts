@@ -22,7 +22,7 @@ let currentraster = RASTERISER_NATIVE;
 
 // 3D scene setup
 // Create and position simple test object
-let mesh = new Mesh({wireframe:false});
+let mesh = new Mesh( { wireframe:false } );
 mesh.load("./obj/african_head.json");
 mesh.set( [0,0,5.5], [0,0,0] );
 
