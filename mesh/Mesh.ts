@@ -27,6 +27,7 @@ export default class Mesh
   private mtranslation: number[][];
 
   public wireframe: boolean;
+  public ready: boolean;
 
   constructor(options?:any)
   {
@@ -36,6 +37,8 @@ export default class Mesh
 
     this.position = [0,0,0];
     this.rotation = [0,0,0];
+
+    this.ready = false;
 
     this.textures = [];
 
@@ -89,6 +92,8 @@ export default class Mesh
           this.uvtextures.push(0);
 
         console.info("Model loaded: "+ this.faces.length +" polygons");
+
+        this.ready = true;
 
       });
 
@@ -151,6 +156,8 @@ export default class Mesh
       v[1] *= height;
       v[2] *= depth;
     }
+
+    this.ready = true;
 
   }
 

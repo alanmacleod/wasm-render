@@ -132,6 +132,9 @@ export default class Device
   // Renders a textured Mesh with zBuffer
   public render(m: Mesh, mat:number[][]):void
   {
+    if (!m.ready)  // Mesh hasn't loaded OTW yet
+      return;
+
     // Directional light
     let light = [0, 0, -1];
     let saturation = 1.35;
