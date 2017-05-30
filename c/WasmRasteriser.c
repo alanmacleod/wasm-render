@@ -62,11 +62,6 @@ void init(unsigned int *buffer, float *zbuffer, unsigned int width, unsigned int
   initialised = true;
 }
 
-void testfunction()
-{
-  return;
-}
-
 
 // No longer used, now expanded inline inside tri() function
 void barycentric( int Px, int Py, int ax, int ay, int bx, int by,

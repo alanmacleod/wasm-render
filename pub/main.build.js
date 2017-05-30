@@ -432,9 +432,6 @@ class Device {
         let light = [0, 0, -1];
         let saturation = 1.35;
         let ambient = 0.3;
-        let renderbuffer = [];
-        // Blank the v norms (we're going to recalc them all in a sec)
-        m.vertexnormals = [];
         // Initialise these outside the loop for normal/lighting calcs
         let v1 = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create();
         let v2 = __WEBPACK_IMPORTED_MODULE_0__math_Vector3__["a" /* default */].create();
@@ -454,14 +451,12 @@ class Device {
         let vertex;
         let transform = __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].create();
         __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].concat([m.matrix, mat], transform);
-        let vnormindicies = [0, 0, 0];
         // For each face (triangle) of the mesh model
         for (let fi = 0; fi < m.faces.length; fi++) {
             let face = m.faces[fi];
             // Transform each face's vertex into view space
             for (let v = 0; v < 3; v++) {
                 vertex = m.vertices[face[v]];
-                vnormindicies[v] = face[v];
                 __WEBPACK_IMPORTED_MODULE_1__math_Matrix__["a" /* default */].transform(vertex, transform, triworld[v]);
                 triscreen[v][0] = triworld[v][0] * this.width + this.hwidth;
                 triscreen[v][1] = -triworld[v][1] * this.height + this.hheight;
@@ -805,10 +800,6 @@ class NativeRasteriser {
             true // Clipping?
             );
         }
-    }
-    testfunction2() {
-        let a = 1;
-        return;
     }
     // Uses a barycentric coord technique of rasterisation I found here
     // in this excellent course/repo: https://github.com/ssloy/tinyrenderer
@@ -1170,6 +1161,10 @@ class WasmLoader {
 
 			REVISION: 16,
 
+			AV_COUNT: 10,
+
+			avbuffer: [],
+
 			dom: container,
 
 			addPanel: addPanel,
@@ -1178,13 +1173,23 @@ class WasmLoader {
 			setview: function (rno) {
 				//console.log(msPanel);
 				msPanel.textlabel = rno ? "WebAssembly / C:" : "JavaScript:";
-				msPanel.fillCol = rno ? "#0033CC" : "#00BB00";
-				msPanel.bgCol = rno ? "#000044" : "#006600";
+				msPanel.fillCol = rno ? "#E855E8" : "#00BB00";
+				msPanel.bgCol = rno ? "#E855E8" : "#00BB00";
 			},
 
 			begin: function () {
 
 				beginTime = (performance || Date).now();
+			},
+
+			// Smoothing function
+			accumulate: function (v) {
+				if (this.avbuffer.length == this.AV_COUNT) this.avbuffer.shift();
+
+				this.avbuffer.push(v);
+				let c = 0;
+				for (let m of this.avbuffer) c += m;
+				return c / this.AV_COUNT;
 			},
 
 			end: function () {
@@ -1193,7 +1198,7 @@ class WasmLoader {
 
 				var time = (performance || Date).now();
 
-				msPanel.update(time - beginTime, 200);
+				msPanel.update(time - beginTime, 200, this.accumulate(time - beginTime));
 
 				if (time > prevTime + 1000) {
 
@@ -1261,7 +1266,7 @@ class WasmLoader {
 		//graph background
 		// context.fillRect( GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT );
 
-		context.fillStyle = '#ffffff'; //bg;
+		context.fillStyle = '#000000'; //bg;
 		context.globalAlpha = 1; //0.9;
 		context.fillRect(GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT);
 
@@ -1275,20 +1280,21 @@ class WasmLoader {
 
 			bgCol: "#006600",
 
-			update: function (value, maxValue) {
+			update: function (value, maxValue, meanValue) {
 
 				min = Math.min(min, value);
 				max = Math.max(max, value);
 
-				context.fillStyle = this.bgCol;
+				context.fillStyle = '#000'; //this.bgCol;
 				context.globalAlpha = 1;
 				// title bar
-				context.fillRect(GRAPH_X, GRAPH_HEIGHT + 15, GRAPH_WIDTH, GRAPH_Y + 3);
+				context.fillRect(GRAPH_X, GRAPH_HEIGHT + 15, GRAPH_WIDTH, GRAPH_Y + 5);
 
 				// title text
-				context.fillStyle = '#ffffff'; //fg
+				context.fillStyle = this.fillCol; //'#ffffff'; //fg
 				//let text = ' JavaScript ('+system+') frame time: ' + round( value ) + ' ' + name + ' (' + round( min ) + '-' + round( max ) + ')';
-				let text = ' ' + this.textlabel + ' ' + round(value) + ' ' + name;
+				let fps = (1000 / meanValue).toFixed(1);
+				let text = ' ' + this.textlabel + ' ' + round(meanValue) + ' ' + name.toLowerCase() + '  (' + fps + " fps)";
 				context.fillText(text, TEXT_X, GRAPH_HEIGHT + 16);
 				context.fillStyle = this.fillCol;
 
@@ -1298,7 +1304,7 @@ class WasmLoader {
 				// context.fillStyle = bg;
 				context.fillRect(GRAPH_X + GRAPH_WIDTH - PR, GRAPH_Y, PR, GRAPH_HEIGHT);
 
-				context.fillStyle = '#ffffff'; //bg;
+				context.fillStyle = '#000000'; //bg;
 				context.globalAlpha = 1;
 				context.fillRect(GRAPH_X + GRAPH_WIDTH - PR, GRAPH_Y, PR, round((1 - value / maxValue) * GRAPH_HEIGHT));
 			}

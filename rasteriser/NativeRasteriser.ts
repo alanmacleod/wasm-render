@@ -26,7 +26,6 @@ export default class NativeRasteriser implements IRasteriser
   private hwidth: number;
   private hheight: number;
 
-  // Use a SharedMemory?
   private zbuffer: Float32Array;
 
   // View into `buffer`. For fast clearing with a colour.
@@ -193,13 +192,6 @@ export default class NativeRasteriser implements IRasteriser
     }
   }
 
-
-  public testfunction2()
-  {
-      let a = 1;
-    return;
-  }
-
   // Uses a barycentric coord technique of rasterisation I found here
   // in this excellent course/repo: https://github.com/ssloy/tinyrenderer
 
@@ -326,7 +318,6 @@ export default class NativeRasteriser implements IRasteriser
         inv_Pv =  inv_p0v * o[0] +    // v/z
                   inv_p1v * o[1] +
                   inv_p2v * o[2];
-
 
         // Divide u/z & v/z by 1/z to get perspective correct UV coords
         u = ((inv_Pu / inv_Pz) * texmaxu)>>0;

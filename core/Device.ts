@@ -88,7 +88,7 @@ export default class Device
 
     this.imageData.data.set( this.rasteriser.buffer );
     this.context.putImageData( this.imageData, 0, 0 );
-    
+
   }
 
   // Renders a textured Mesh with zBuffer
@@ -98,11 +98,6 @@ export default class Device
     let light = [0, 0, -1];
     let saturation = 1.35;
     let ambient = 0.3;
-
-    let renderbuffer = [];
-
-    // Blank the v norms (we're going to recalc them all in a sec)
-    m.vertexnormals = [];
 
     // Initialise these outside the loop for normal/lighting calcs
     let v1 = Vector3.create();
@@ -128,7 +123,6 @@ export default class Device
 
     Matrix.concat([m.matrix, mat], transform);
 
-    let vnormindicies = [0,0,0];
 
     // For each face (triangle) of the mesh model
     for (let fi=0; fi<m.faces.length; fi++)
@@ -139,7 +133,6 @@ export default class Device
       for (let v=0; v<3; v++)
       {
         vertex = m.vertices[face[v]];
-        vnormindicies[v] = face[v];
 
         Matrix.transform(vertex, transform, triworld[v]);
 
