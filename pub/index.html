@@ -18,19 +18,46 @@
       cursor: pointer; /* make it look clickable */
   }
 
+  #nosupport
+  {
+    width: 640px;
+    margin-right: auto;
+    margin-left:auto;
+    margin-top: 100px;
+    display: none;
+  }
+
   #info
   {
-    color: #999;
     padding: 30px;
     cursor: default;
     pointer-events: none;
   }
+
+  p {color: #999;}
   h3 { color: #a8a8a8 }
+  h1 {color: #C04040 }
   b { color: #b8b8b8 }
 
   </style>
 </head>
 <body>
+  <div id="nosupport">
+
+    <h1>Whoops</h1>
+    <p>
+      Your browser is sooo old school, not only does it not support
+      <b>WebAssembly</b> but it probably pulls this sorta thing on the dance floor
+    </p>
+      <center>
+        <img id="imgnosupport" width="330" height="246"/>
+      </center>
+
+    <p>
+      Sorry 🙄 🔫
+    </p>
+
+  </div>
   <div id="output">
     <div id="info">
       <h3>Hi !</h3>
@@ -60,50 +87,27 @@
 
     </div>
   </div>
-  <script src="./main.build.js"></script>
 
-
-  <!-- <textarea id="ta"></textarea>
-
-  <script src="./three.min.js"></script>
   <script>
-  var box = new THREE.CubeGeometry(1,1,1);
 
-  let ta = document.getElementById("ta");
-  for (var t=0; t<box.vertices.length;t++)
+  if (!('WebAssembly2' in window))
   {
-    let v = box.vertices[t];
-    console.log(v.x, v.y, v.z)
-    ta.innerHTML += "["+v.x+","+v.y+","+v.z+"],\n";
+    var e = document.getElementById('output');
+    var n = document.getElementById('nosupport').style.display = 'block';
+    var i = document.getElementById('imgnosupport').src = "./img/breakdance2-sm.gif";
+
+    e.style.display = 'none';
+  } else {
+
+    var app = document.createElement("script");
+    app.type = "application/javascript";
+    app.src = "./main.build.js";
+
+    document.body.appendChild(app);
   }
 
-  ta.innerHTML +="\n\n";
 
-  for (var t=0; t<box.faces.length; t++)
-  {
-    let f = box.faces[t];
-    ta.innerHTML += "["+f.a+","+f.b+","+f.c+"],\n";
-
-  }
-
-  ta.innerHTML +="\n\n";
-
-  for (var t=0; t<box.faceVertexUvs[0].length; t++)
-  {
-    ta.innerHTML += "["
-    for (let fv=0; fv<box.faceVertexUvs[0][t].length; fv++)
-    {
-    let uva = box.faceVertexUvs[0][t][fv];
-    ta.innerHTML += "["+uva.x+","+uva.y+"]";
-    if (fv < box.faceVertexUvs[0][t].length-1) ta.innerHTML +=','
-    }
-    ta.innerHTML +="],\n";
-    // ta.innerHTML += "["+uva.x+","+uva.y+"]\n";
-    // console.log(uva);
-//console.log(box.faceVertexUvs[0][0][0].y);
-  } -->
-
-
+  </script>
 
   </script>
 </body>

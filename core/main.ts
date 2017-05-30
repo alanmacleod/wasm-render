@@ -14,6 +14,7 @@ const SCR_WIDTH = 640, SCR_HEIGHT = 480;
 const PAGE_SIZE_BYTES = SCR_WIDTH * SCR_HEIGHT * 4;
 const RASTERISER_NATIVE = 0, RASTERISER_WASM = 1;
 
+
 let w = new WasmLoader();
 let stats;
 
