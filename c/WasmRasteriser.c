@@ -34,7 +34,6 @@ void vline( int, int, int, unsigned int );
 void barycentric( int Px, int Py, int ax, int ay, int bx, int by,
                               int cx, int cy, float *o0, float *o1, float* o2);
 
-bool initialised = false;
 
 unsigned int *heap_ptr = NULL;
 float *heap_zbuffer_ptr = NULL; // 32-bit float
@@ -54,8 +53,6 @@ void init(unsigned int *buffer, float *zbuffer, unsigned int width, unsigned int
   buffer_height = height;
   buffer_num_pixels = width * height;
   buffer_num_bytes = buffer_num_pixels * BYTES_PER_PIXEL;
-
-  initialised = true;
 }
 
 
@@ -242,7 +239,6 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
 // Horribly inefficient fill routine for testing
 void fill(unsigned int val)
 {
-  if (!initialised) return;
 
   for (int t=0; t<buffer_num_pixels; t++)
     heap_ptr[t] = val;
@@ -265,7 +261,6 @@ inline int pset(int x, int y, unsigned int val)
 // Yet more test code, not used in the program
 void vline(int x, int y1, int y2, unsigned int val)
 {
-  if (!initialised) return;
 
   // completely off the buffer
   if (x < 0) return;
