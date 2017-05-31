@@ -158,7 +158,7 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   int bc1;
   int bc2 = va0 * vb1 - va1 * vb0;
 
-  if (Math_abs(bc2) < 1) // TODO: move this test before the inv_p0z calcs
+  if (Math_abs(bc2) < 1)
     return;
 
   // Perspective correct shizz
@@ -185,7 +185,6 @@ void tri( int p0x, int p0y, float p0z, float u0, float v0,
   {
     for (x=minx; x<=maxx; x++)
     {
-      bo++;
       va2 = p0x - x;
       vb2 = p0y - y;
 
