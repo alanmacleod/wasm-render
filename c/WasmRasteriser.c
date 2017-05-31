@@ -14,10 +14,6 @@
 
 #include "WasmRasteriser.h"
 
-#define BYTES_PER_PIXEL 4
-#define BIT_SHIFT_PER_PIXEL 2
-
-#define PERSPECTIVE_CORRECT_MODE
 
 /* IMPORTANT NOTE: printf() from here (to browser console) *ONLY WORKS IF* you
                 include a newline escape char '\n' in the string otherwise
