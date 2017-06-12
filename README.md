@@ -3,6 +3,8 @@ Software rasteriser written in WASM/C &amp; TypeScript to test WebAssembly and c
 
 Rasteriser draws a single texture-mapped polygon onto each face of a simple 3D mesh. The same code has been written in pure Javascript (well... TypeScript) and then again in WebAssembly / C.
 
+[Try the demo running here](http://demos.alanmacleod.eu/wasm-render/pub/)
+
 ![alt tag](https://raw.githubusercontent.com/alanmacleod/wasm-render/master/pub/img/screenshot2.jpg)
 
 You can switch between C and JS at run time to visually compare performance, and a realtime latency graph is included to measure each frame time in milliseconds.
