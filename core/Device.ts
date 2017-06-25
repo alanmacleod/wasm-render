@@ -215,7 +215,6 @@ export default class Device
           triscreen, m.uvs[fi], ambient + power * saturation,
           m.textures[m.uvtextures[fi]], m.wireframe
         );
-
       }
 
     }

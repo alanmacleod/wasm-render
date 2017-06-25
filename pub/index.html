@@ -40,13 +40,15 @@
   {
     padding: 30px;
     cursor: default;
-    pointer-events: none;
+    /*pointer-events: none;*/
   }
 
   p {color: #999;}
   h3 { color: #a8a8a8 }
   h1 {color: #C04040 }
   b { color: #b8b8b8 }
+
+  a:link, a:visited { color:#4040ff;}
 
   </style>
 </head>
@@ -68,15 +70,18 @@
 
   </div>
   <div id="output">
-    <div id="info">
+    <div id="info" onclick="stopp()">
       <h3>Hi !</h3>
+      <p>
+        <b>Click the model to switch between pure Javascript and WebAssembly code in realtime whoooo</b>
+      </p>
       <p>
         This is the result of an exploration of WebAssembly technology, how it performs and how
         it might integrate into the existing Javascript development process.
       </p>
       <p>
-        Just to be clear, <i>everything</i> required to produce this output is in software only (I know, cos I wrote it all). So, no hardware, libraries, imports,
-        external APIs etc. One exception: the stats graph, originally written by <a href="https://github.com/mrdoob/stats.js/">mrdoob</a>, modified by me.
+        Just to be clear, <i>everything</i> required to produce this output is in software only. So, no hardware, libraries, imports,
+        browser APIs etc. One exception: the stats graph, originally written by <a href="https://github.com/mrdoob/stats.js/">mrdoob</a>, modified by me.
       </p>
       <p>
         I thought a proper work-out 💪 test of the performance would be to write a
@@ -86,22 +91,23 @@
       <p>
         The graph is recording the time required to render one frame in milliseconds
       </p>
-
       <p>
-        <b>Click the model to switch between pure Javascript and WebAssembly code in realtime whoooo</b>
-      </p>
+        Please see the <a href="https://medium.com/@lady_shapes/webassembly-workout-back-to-the-future-part-1-compilation-and-memory-8265e634ef90">write-up of this project</a> for more info.
 
+      </p>
       <p>
         <small>Alan MacLeod</small>
-      </p>
-      <p>
-        <small>blog.alanmacleod.eu/wasm-renderer</small>
       </p>
 
     </div>
   </div>
 
   <script>
+
+  function stopp(e)
+  {
+    (e || window.event).stopPropagation();
+  }
 
   if (!('WebAssembly' in window))
   {
